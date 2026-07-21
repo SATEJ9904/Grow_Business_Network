@@ -1,0 +1,1436 @@
+================================================================================
+NETWORKING CLUB MEMBER MANAGEMENT SYSTEM - API ENDPOINTS
+Base URL: http://192.168.1.19:5000
+API Version: v1
+Current Date: April 4, 2026
+================================================================================
+
+TABLE OF CONTENTS:
+1. HEALTH CHECK
+2. AUTHENTICATION ENDPOINTS
+3. MEMBER ENDPOINTS
+4. ADMIN ENDPOINTS
+
+================================================================================
+1. HEALTH CHECK
+================================================================================
+
+Endpoint: GET /health
+URL: http://192.168.1.19:5000/health
+Method: GET
+Auth Required: NO
+Rate Limited: NO
+
+Request:
+--------
+No body required
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Server is running",
+  "timestamp": "2024-04-04T10:30:00.000Z"
+}
+
+
+================================================================================
+2. AUTHENTICATION ENDPOINTS
+================================================================================
+
+2.1 SEND OTP FOR EMAIL VERIFICATION
+----------------------------------
+
+Endpoint: POST /api/auth/send-otp
+URL: http://192.168.1.19:5000/api/auth/send-otp
+Method: POST
+Auth Required: NO
+Rate Limited: YES (3 per hour per IP)
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "email": "john@example.com"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "OTP sent successfully to your email",
+  "data": {
+    "email": "john@example.com",
+    "expiresIn": "5 minutes"
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Disposable email addresses are not allowed"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Too many OTP requests. Please try again after 1 hour."
+}
+
+
+2.2 VERIFY OTP
+--------------
+
+Endpoint: POST /api/auth/verify-otp
+URL: http://192.168.1.19:5000/api/auth/verify-otp
+Method: POST
+Auth Required: NO
+Rate Limited: NO
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "email": "john@example.com",
+  "otp": "12345"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "OTP verified successfully",
+  "data": {
+    "email": "john@example.com",
+    "isVerified": true
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Invalid OTP. 2 attempts remaining."
+}
+
+OR
+
+{
+  "success": false,
+  "message": "OTP has expired. Please request a new OTP."
+}
+
+
+2.3 REGISTER NEW MEMBER
+-----------------------
+
+Endpoint: POST /api/auth/register
+URL: http://192.168.1.19:5000/api/auth/register
+Method: POST
+Auth Required: NO
+Rate Limited: YES (5 per hour per IP)
+Content-Type: multipart/form-data
+
+Request Headers:
+----------------
+Content-Type: multipart/form-data
+
+Request Body:
+-------------
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "mobile": "9876543210",
+  "password": "SecurePassword123",
+  "companyName": "Tech Corporation",
+  "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+  "companyLogo": [FILE - max 2MB, format: JPEG/PNG/WEBP],
+  "paymentProof": [FILE - max 2MB, format: JPEG/PNG/WEBP]
+}
+
+Field Validation:
+- name: 2-50 characters required
+- email: valid email format required
+- mobile: 10 digits required
+- password: minimum 6 characters required
+- companyName: required
+- chapterId: valid MongoDB ObjectId required
+- companyLogo: optional (max 2MB)
+- paymentProof: optional (max 2MB)
+
+Response (201 Created):
+-----------------------
+{
+  "success": true,
+  "message": "Registration successful. Your account is under review.",
+  "data": {
+    "userId": "605a7c8c9d0e1f2a3b4c5d6e",
+    "email": "john@example.com",
+    "status": "pending"
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Email already registered"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "File size exceeds 2MB limit"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Invalid chapter selected"
+}
+
+
+2.4 LOGIN MEMBER
+----------------
+
+Endpoint: POST /api/auth/login
+URL: http://192.168.1.19:5000/api/auth/login
+Method: POST
+Auth Required: NO
+Rate Limited: YES (5 attempts per 15 minutes per IP)
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "email": "john@example.com",
+  "password": "SecurePassword123"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "mobile": "9876543210",
+      "companyName": "Tech Corporation",
+      "companyLogo": "uploads/logos/company-logo-1701584400000-a1b2c3d4.jpg",
+      "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+      "profileImage": null,
+      "services": ["Consulting", "Development"],
+      "description": "Senior Developer with 5 years experience",
+      "paymentProof": "uploads/payments/payment-1701584400000-x1y2z3a4.pdf",
+      "role": "member",
+      "status": "approved",
+      "isEmailVerified": true,
+      "createdAt": "2024-04-01T10:30:00.000Z",
+      "updatedAt": "2024-04-02T14:22:00.000Z"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTI0ODMyMH0.X_X_X_X_X_X_X_X_X_X_X_X_X_X_X",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTg1MjIyMH0.Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y",
+    "expiresIn": "15m"
+  }
+}
+
+Response (401 Unauthorized):
+----------------------------
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Your account is under review. Please wait for approval."
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Your account has been rejected."
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Please verify your email first"
+}
+
+
+2.5 REFRESH ACCESS TOKEN
+------------------------
+
+Endpoint: POST /api/auth/refresh-token
+URL: http://192.168.1.19:5000/api/auth/refresh-token
+Method: POST
+Auth Required: NO
+Rate Limited: NO
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTg1MjIyMH0.Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTI0ODMyMH0.X_X_X_X_X_X_X_X_X_X_X_X_X_X_X",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTg1MjIyMH0.Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y_Y",
+    "expiresIn": "15m"
+  }
+}
+
+Response (401 Unauthorized):
+----------------------------
+{
+  "success": false,
+  "message": "Invalid refresh token"
+}
+
+
+2.6 LOGOUT MEMBER
+-----------------
+
+Endpoint: POST /api/auth/logout
+URL: http://192.168.1.19:5000/api/auth/logout
+Method: POST
+Auth Required: YES
+Rate Limited: NO
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTI0ODMyMH0.X_X_X_X_X_X_X_X_X_X_X_X_X_X_X
+
+Request Body:
+-------------
+No body required (empty JSON object {})
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Logout successful"
+}
+
+Response (401 Unauthorized):
+----------------------------
+{
+  "success": false,
+  "message": "Access token is required"
+}
+
+
+2.7 FORGOT PASSWORD
+-------------------
+
+Endpoint: POST /api/auth/forgot-password
+URL: http://192.168.1.19:5000/api/auth/forgot-password
+Method: POST
+Auth Required: NO
+Rate Limited: NO
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "email": "john@example.com"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "If an account exists with this email, a password reset link will be sent.",
+  "data": {
+    "email": "john@example.com"
+  }
+}
+
+NOTE: Even if email doesn't exist, returns 200 for security reasons
+An email with reset link will be sent if account exists
+
+
+2.8 VERIFY PASSWORD RESET TOKEN
+-------------------------------
+
+Endpoint: GET /api/auth/verify-reset-token/:token
+URL: http://192.168.1.19:5000/api/auth/verify-reset-token/abc123def456...
+Method: GET
+Auth Required: NO
+Rate Limited: NO
+Content-Type: application/json
+
+URL Parameters:
+---------------
+- token: Password reset token received via email
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Reset token is valid",
+  "data": {
+    "email": "john@example.com",
+    "isValid": true
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Invalid reset token"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Reset token has expired. Please request a new one."
+}
+
+OR
+
+{
+  "success": false,
+  "message": "This reset token has already been used."
+}
+
+
+2.9 RESET PASSWORD
+------------------
+
+Endpoint: POST /api/auth/reset-password
+URL: http://192.168.1.19:5000/api/auth/reset-password
+Method: POST
+Auth Required: NO
+Rate Limited: NO
+Content-Type: application/json
+
+Request Headers:
+----------------
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "token": "abc123def456...",
+  "password": "NewPassword123",
+  "confirmPassword": "NewPassword123"
+}
+
+Field Validation:
+- token: required, must be valid and not expired
+- password: minimum 6 characters required
+- confirmPassword: must match password field
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Password reset successfully. You can now log in with your new password.",
+  "data": {
+    "email": "john@example.com"
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Passwords do not match"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Password must be at least 6 characters"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Invalid reset token"
+}
+
+OR
+
+{
+  "success": false,
+  "message": "Reset token has expired. Please request a new one."
+}
+
+
+================================================================================
+3. MEMBER ENDPOINTS
+================================================================================
+
+3.1 GET OWN PROFILE
+-------------------
+
+Endpoint: GET /api/member/profile
+URL: http://192.168.1.19:5000/api/member/profile
+Method: GET
+Auth Required: YES
+Rate Limited: YES (100 per 15 minutes per IP)
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTI0ODMyMH0.X_X_X_X_X_X_X_X_X_X_X_X_X_X_X
+
+Request Body:
+-------------
+No body required
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "mobile": "9876543210",
+    "companyName": "Tech Corporation",
+    "companyLogo": "uploads/logos/company-logo-1701584400000-a1b2c3d4.jpg",
+    "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+    "profileImage": "uploads/profiles/profile-1701584400000-b2c3d4e5.jpg",
+    "services": ["Consulting", "Development"],
+    "description": "Senior Developer with 5 years experience",
+    "paymentProof": "uploads/payments/payment-1701584400000-x1y2z3a4.pdf",
+    "role": "member",
+    "status": "approved",
+    "isEmailVerified": true,
+    "createdAt": "2024-04-01T10:30:00.000Z",
+    "updatedAt": "2024-04-02T14:22:00.000Z"
+  }
+}
+
+Response (401 Unauthorized):
+----------------------------
+{
+  "success": false,
+  "message": "Access token is required"
+}
+
+
+3.2 UPDATE OWN PROFILE
+----------------------
+
+Endpoint: PUT /api/member/profile
+URL: http://192.168.1.19:5000/api/member/profile
+Method: PUT
+Auth Required: YES
+Rate Limited: YES (100 per 15 minutes per IP)
+Content-Type: multipart/form-data
+
+Request Headers:
+----------------
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MDVhN2M4YzlkMGUxZjJhM2I0YzVkNmUiLCJpYXQiOjE3MDEyNDc0MjAsImV4cCI6MTcwMTI0ODMyMH0.X_X_X_X_X_X_X_X_X_X_X_X_X_X_X
+
+Request Body:
+-------------
+{
+  "name": "John Doe Updated",
+  "mobile": "9876543210",
+  "companyName": "Tech Corporation Ltd",
+  "services": ["Consulting", "Development", "Training"],
+  "description": "Senior Developer with 7 years experience",
+  "profileImage": [FILE - max 2MB, format: JPEG/PNG/WEBP]
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+    "name": "John Doe Updated",
+    "email": "john@example.com",
+    "mobile": "9876543210",
+    "companyName": "Tech Corporation Ltd",
+    "companyLogo": "uploads/logos/company-logo-1701584400000-a1b2c3d4.jpg",
+    "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+    "profileImage": "uploads/profiles/profile-1701584500000-c3d4e5f6.jpg",
+    "services": ["Consulting", "Development", "Training"],
+    "description": "Senior Developer with 7 years experience",
+    "paymentProof": "uploads/payments/payment-1701584400000-x1y2z3a4.pdf",
+    "role": "member",
+    "status": "approved",
+    "isEmailVerified": true,
+    "updatedAt": "2024-04-02T15:30:00.000Z"
+  }
+}
+
+
+3.3 GET MEMBER LIST (DIRECTORY)
+-------------------------------
+
+Endpoint: GET /api/member/list
+URL: http://192.168.1.19:5000/api/member/list?page=1&limit=10
+Method: GET
+Auth Required: NO
+Rate Limited: YES (100 per 15 minutes per IP)
+Content-Type: application/json
+
+Query Parameters:
+-----------------
+- page: integer (default: 1)
+- limit: integer (default: 10, max: 100)
+- status: string (optional) - "pending", "approved", "rejected"
+
+Examples:
+- http://192.168.1.19:5000/api/member/list
+- http://192.168.1.19:5000/api/member/list?page=2&limit=20
+- http://192.168.1.19:5000/api/member/list?status=approved&limit=15
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Members list retrieved successfully",
+  "data": [
+    {
+      "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "mobile": "9876543210",
+      "companyName": "Tech Corporation",
+      "companyLogo": "uploads/logos/company-logo-1701584400000-a1b2c3d4.jpg",
+      "services": ["Consulting", "Development"],
+      "description": "Senior Developer",
+      "role": "member",
+      "status": "approved",
+      "isEmailVerified": true,
+      "createdAt": "2024-04-01T10:30:00.000Z"
+    },
+    {
+      "_id": "605a7c8c9d0e1f2a3b4c5d6f",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "mobile": "8765432109",
+      "companyName": "Design Studio",
+      "companyLogo": "uploads/logos/design-logo-1701584500000-b2c3d4e5.jpg",
+      "services": ["Design", "Branding"],
+      "description": "UX/UI Designer",
+      "role": "member",
+      "status": "approved",
+      "isEmailVerified": true,
+      "createdAt": "2024-04-02T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 150,
+    "page": 1,
+    "limit": 10,
+    "pages": 15
+  }
+}
+
+
+3.4 GET MEMBER BY ID
+--------------------
+
+Endpoint: GET /api/member/:id
+URL: http://192.168.1.19:5000/api/member/605a7c8c9d0e1f2a3b4c5d6e
+Method: GET
+Auth Required: NO
+Rate Limited: YES (100 per 15 minutes per IP)
+Content-Type: application/json
+
+URL Parameters:
+---------------
+- id: MongoDB ObjectId of the member
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Member retrieved successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "mobile": "9876543210",
+    "companyName": "Tech Corporation",
+    "companyLogo": "uploads/logos/company-logo-1701584400000-a1b2c3d4.jpg",
+    "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+    "profileImage": "uploads/profiles/profile-1701584400000-b2c3d4e5.jpg",
+    "services": ["Consulting", "Development"],
+    "description": "Senior Developer",
+    "role": "member",
+    "status": "approved",
+    "isEmailVerified": true,
+    "createdAt": "2024-04-01T10:30:00.000Z"
+  }
+}
+
+Response (404 Not Found):
+--------------------------
+{
+  "success": false,
+  "message": "Member not found"
+}
+
+
+3.5 GET USER BY ID
+------------------
+
+Endpoint: GET /api/users/:userId
+URL: http://192.168.1.19:5000/api/users/605a7c8c9d0e1f2a3b4c5d6e
+Method: GET
+Auth Required: NO
+Rate Limited: YES (100 per 15 minutes per IP)
+Content-Type: application/json
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d6e",
+    "name": "John Doe",
+    "aboutBusiness": "We provide cutting-edge technology solutions...",
+    "whatWeDo": [
+      {"id": 1, "title": "Business Consulting", "emoji": "📊"},
+      {"id": 2, "title": "Process Automation", "emoji": "⚙️"}
+    ]
+  }
+}
+
+
+3.6 UPDATE BUSINESS INFO
+------------------------
+
+Endpoint: PUT /api/users/:userId/business-info
+URL: http://192.168.1.19:5000/api/users/605a7c8c9d0e1f2a3b4c5d6e/business-info
+Method: PUT
+Auth Required: NO
+Content-Type: application/json
+
+Request Body:
+{
+  "aboutBusiness": "Business description...",
+  "whatWeDo": [{"id": 1, "title": "Consulting", "emoji": "📊"}]
+}
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "Business info updated successfully"
+}
+
+
+================================================================================
+4. ADMIN ENDPOINTS
+================================================================================
+
+NOTE: All admin endpoints require:
+- Authorization header with valid admin access token
+- Admin role in user account
+- Rate Limiting: 100 requests per 15 minutes per IP
+
+4.1 GET PENDING MEMBERS
+-----------------------
+
+Endpoint: GET /api/admin/members
+URL: http://192.168.1.19:5000/api/admin/members?status=pending&page=1&limit=10
+Method: GET
+Auth Required: YES (Admin)
+Rate Limited: YES
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+
+Query Parameters:
+-----------------
+- status: string (pending, approved, rejected) - default: pending
+- page: integer - default: 1
+- limit: integer - default: 10
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Pending members retrieved successfully",
+  "data": [
+    {
+      "_id": "605a7c8c9d0e1f2a3b4c5d70",
+      "name": "Alice Johnson",
+      "email": "alice@example.com",
+      "mobile": "9123456789",
+      "companyName": "Finance Solutions",
+      "companyLogo": "uploads/logos/finance-logo-1701584600000-d4e5f6g7.jpg",
+      "chapterId": "650a1b2c3d4e5f6g7h8i9j0k",
+      "profileImage": null,
+      "services": ["Financial Planning"],
+      "description": "CFO with 10 years experience",
+      "paymentProof": "uploads/payments/payment-1701584600000-y2z3a4b5.pdf",
+      "role": "member",
+      "status": "pending",
+      "isEmailVerified": true,
+      "createdAt": "2024-04-03T09:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 12,
+    "page": 1,
+    "limit": 10,
+    "pages": 2
+  }
+}
+
+Response (403 Forbidden):
+-------------------------
+{
+  "success": false,
+  "message": "Admin access required"
+}
+
+
+4.2 GET MEMBER DETAIL (ADMIN VIEW)
+----------------------------------
+
+Endpoint: GET /api/admin/member/:id
+URL: http://192.168.1.19:5000/api/admin/member/605a7c8c9d0e1f2a3b4c5d70
+Method: GET
+Auth Required: YES (Admin)
+Rate Limited: YES
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+
+URL Parameters:
+---------------
+- id: MongoDB ObjectId of the member
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Member details retrieved successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d70",
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "mobile": "9123456789",
+    "companyName": "Finance Solutions",
+    "companyLogo": "uploads/logos/finance-logo-1701584600000-d4e5f6g7.jpg",
+    "chapterId": {
+      "_id": "650a1b2c3d4e5f6g7h8i9j0k",
+      "name": "Mumbai Chapter",
+      "city": "Mumbai"
+    },
+    "profileImage": null,
+    "services": ["Financial Planning"],
+    "description": "CFO with 10 years experience",
+    "paymentProof": "uploads/payments/payment-1701584600000-y2z3a4b5.pdf",
+    "role": "member",
+    "status": "pending",
+    "isEmailVerified": true,
+    "createdAt": "2024-04-03T09:00:00.000Z",
+    "updatedAt": "2024-04-03T09:00:00.000Z"
+  }
+}
+
+
+4.3 APPROVE MEMBER
+------------------
+
+Endpoint: POST /api/admin/approve/:id
+URL: http://192.168.1.19:5000/api/admin/approve/605a7c8c9d0e1f2a3b4c5d70
+Method: POST
+Auth Required: YES (Admin)
+Rate Limited: YES
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+Content-Type: application/json
+
+URL Parameters:
+---------------
+- id: MongoDB ObjectId of the member
+
+Request Body:
+-------------
+No body required (empty JSON object {})
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Member approved successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d70",
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "status": "approved",
+    "message": "Approval email sent to member"
+  }
+}
+
+Response (404 Not Found):
+--------------------------
+{
+  "success": false,
+  "message": "Member not found"
+}
+
+
+4.4 REJECT MEMBER
+-----------------
+
+Endpoint: POST /api/admin/reject/:id
+URL: http://192.168.1.19:5000/api/admin/reject/605a7c8c9d0e1f2a3b4c5d70
+Method: POST
+Auth Required: YES (Admin)
+Rate Limited: YES
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+Content-Type: application/json
+
+URL Parameters:
+---------------
+- id: MongoDB ObjectId of the member
+
+Request Body:
+-------------
+{
+  "reason": "Documents do not meet verification requirements"
+}
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Member rejected successfully",
+  "data": {
+    "_id": "605a7c8c9d0e1f2a3b4c5d70",
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "status": "rejected",
+    "message": "Rejection email sent to member with reason"
+  }
+}
+
+
+4.5 CREATE CHAPTER
+------------------
+
+Endpoint: POST /api/admin/chapter
+URL: http://192.168.1.19:5000/api/admin/chapter
+Method: POST
+Auth Required: YES (Admin)
+Rate Limited: YES
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+Content-Type: application/json
+
+Request Body:
+-------------
+{
+  "name": "Bangalore Chapter",
+  "city": "Bangalore",
+  "description": "Networking Club Bangalore Chapter"
+}
+
+Field Validation:
+- name: 2-50 characters, required, unique
+- city: 2-50 characters, required
+- description: max 500 characters, optional
+
+Response (201 Created):
+-----------------------
+{
+  "success": true,
+  "message": "Chapter created successfully",
+  "data": {
+    "_id": "650a1b2c3d4e5f6g7h8i9j0l",
+    "name": "Bangalore Chapter",
+    "city": "Bangalore",
+    "description": "Networking Club Bangalore Chapter",
+    "totalMembers": 0,
+    "approvedMembers": 0,
+    "pendingMembers": 0,
+    "isActive": true,
+    "createdAt": "2024-04-04T10:00:00.000Z",
+    "updatedAt": "2024-04-04T10:00:00.000Z"
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "Chapter with this name already exists"
+}
+
+
+4.6 GET ALL CHAPTERS
+--------------------
+
+Endpoint: GET /api/admin/chapters
+URL: http://192.168.1.19:5000/api/admin/chapters
+Method: GET
+Auth Required: NO
+Rate Limited: YES
+Content-Type: application/json
+
+Request Headers:
+----------------
+No authentication required
+
+Request Body:
+-------------
+No body required
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Chapters retrieved successfully",
+  "data": [
+    {
+      "_id": "650a1b2c3d4e5f6g7h8i9j0k",
+      "name": "Mumbai Chapter",
+      "city": "Mumbai",
+      "description": "Networking Club Mumbai",
+      "totalMembers": 45,
+      "approvedMembers": 38,
+      "pendingMembers": 5,
+      "isActive": true,
+      "createdAt": "2024-03-01T10:00:00.000Z"
+    },
+    {
+      "_id": "650a1b2c3d4e5f6g7h8i9j0l",
+      "name": "Bangalore Chapter",
+      "city": "Bangalore",
+      "description": "Networking Club Bangalore",
+      "totalMembers": 32,
+      "approvedMembers": 28,
+      "pendingMembers": 3,
+      "isActive": true,
+      "createdAt": "2024-03-15T10:00:00.000Z"
+    }
+  ]
+}
+
+
+4.7 CHECK USER STATUS
+--------------------
+
+Endpoint: GET /api/admin/user-status
+URL: http://192.168.1.19:5000/api/admin/user-status?id=userId
+Method: GET
+Auth Required: NO
+Rate Limited: YES
+Content-Type: application/json
+
+Request Query Parameters:
+------------------------
+id (required): User's ID to check status for
+
+Request Headers:
+----------------
+No authentication required
+
+Request Body:
+-------------
+No body required
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "User status retrieved successfully",
+  "data": {
+    "id": "650a1b2c3d4e5f6g7h8i9j0m",
+    "email": "john.doe@example.com",
+    "name": "John Doe",
+    "status": "pending",
+    "role": "member",
+    "createdAt": "2024-04-08T15:30:00.000Z"
+  }
+}
+
+Response (400 Bad Request):
+---------------------------
+{
+  "success": false,
+  "message": "User ID parameter is required"
+}
+
+Response (404 Not Found):
+-------------------------
+{
+  "success": false,
+  "message": "User not found"
+}
+
+Example Status Values:
+----------------------
+- "pending": User's membership is awaiting approval
+- "approved": User's membership has been approved
+- "rejected": User's membership has been rejected
+
+
+4.8 GET DASHBOARD STATISTICS
+----------------------------
+
+Endpoint: GET /api/admin/dashboard-stats
+URL: http://192.168.1.19:5000/api/admin/dashboard-stats
+Method: GET
+Auth Required: YES (Admin)
+Rate Limited: YES
+Content-Type: application/json
+
+Request Headers:
+----------------
+Authorization: Bearer [ADMIN_ACCESS_TOKEN]
+
+Request Body:
+-------------
+No body required
+
+Response (200 OK):
+------------------
+{
+  "success": true,
+  "message": "Dashboard statistics retrieved successfully",
+  "data": {
+    "totalMembers": 150,
+    "approvedMembers": 120,
+    "pendingMembers": 25,
+    "rejectedMembers": 5,
+    "totalChapters": 5,
+    "membersByChapter": [
+      {
+        "_id": "Mumbai Chapter",
+        "count": 50
+      },
+      {
+        "_id": "Bangalore Chapter",
+        "count": 35
+      },
+      {
+        "_id": "Delhi Chapter",
+        "count": 28
+      },
+      {
+        "_id": "Pune Chapter",
+        "count": 22
+      },
+      {
+        "_id": "Hyderabad Chapter",
+        "count": 15
+      }
+    ],
+    "recentRegistrations": [
+      {
+        "_id": "605a7c8c9d0e1f2a3b4c5d75",
+        "name": "Bob Wilson",
+        "email": "bob@example.com",
+        "status": "approved",
+        "createdAt": "2024-04-04T08:00:00.000Z"
+      },
+      {
+        "_id": "605a7c8c9d0e1f2a3b4c5d74",
+        "name": "Carol Davis",
+        "email": "carol@example.com",
+        "status": "pending",
+        "createdAt": "2024-04-04T06:30:00.000Z"
+      }
+    ]
+  }
+}
+
+
+================================================================================
+COMMON HTTP STATUS CODES
+================================================================================
+
+200 OK
+- Request successful, expected response returned
+
+201 Created
+- Resource successfully created
+
+400 Bad Request
+- Invalid request data or validation failed
+
+401 Unauthorized
+- Authentication token missing or invalid
+
+403 Forbidden
+- Authenticated but lacks permission for this resource
+
+404 Not Found
+- Resource not found
+
+429 Too Many Requests
+- Rate limit exceeded
+
+500 Internal Server Error
+- Server encountered an error
+
+
+================================================================================
+AUTHENTICATION NOTES
+================================================================================
+
+1. All protected endpoints require Authorization header:
+   Authorization: Bearer <ACCESS_TOKEN>
+
+2. Access token expires in 15 minutes - use refresh token to get new one
+
+3. Refresh token expires in 7 days
+
+4. Store tokens securely (httpOnly cookies recommended over localStorage)
+
+5. On 403 error, refresh your access token using /api/auth/refresh-token
+
+
+================================================================================
+FILE UPLOAD GUIDELINES
+================================================================================
+
+Allowed File Types: JPEG, PNG, WEBP
+Maximum File Size: 2MB (2,097,152 bytes)
+
+Upload Fields:
+- companyLogo: During registration
+- profileImage: During profile update
+- paymentProof: During registration
+
+Files are stored in:
+- /uploads/logos/
+- /uploads/profiles/
+- /uploads/payments/
+
+Served from:
+http://192.168.1.19:5000/uploads/logos/[filename]
+http://192.168.1.19:5000/uploads/profiles/[filename]
+http://192.168.1.19:5000/uploads/payments/[filename]
+
+
+================================================================================
+RATE LIMITING
+================================================================================
+
+Global API Rate Limit: 100 requests per 15 minutes per IP
+OTP Rate Limit: 3 OTP requests per hour per IP
+Login Rate Limit: 5 attempts per 15 minutes per IP
+Registration Rate Limit: 5 registrations per hour per IP
+
+Headers returned on rate limited responses:
+RateLimit-Limit: 100
+RateLimit-Remaining: 95
+RateLimit-Reset: 1701248400
+
+
+================================================================================
+ERROR RESPONSE FORMAT
+================================================================================
+
+All error responses follow this format:
+
+{
+  "success": false,
+  "message": "Descriptive error message"
+}
+
+Example error responses:
+
+Validation Error:
+{
+  "success": false,
+  "message": "Validation Error: email must be a valid email, mobile must be 10 digits"
+}
+
+Authentication Error:
+{
+  "success": false,
+  "message": "Invalid or expired token"
+}
+
+Authorization Error:
+{
+  "success": false,
+  "message": "Admin access required"
+}
+
+Generic Error:
+{
+  "success": false,
+  "message": "An error occurred while processing your request"
+}
+
+
+================================================================================
+TESTING TOOLS RECOMMENDATIONS
+================================================================================
+
+1. Postman
+   - Import endpoints and create requests
+   - Save responses as examples
+   - Create test scripts
+
+2. Insomnia
+   - Alternative REST client
+   - Built-in request chaining
+
+3. VS Code REST Client Extension
+   - Create .http or .rest files
+   - Execute directly from VS Code
+
+4. cURL (Command Line)
+   Examples:
+   curl http://192.168.1.19:5000/health
+   curl -X POST http://192.168.1.19:5000/api/auth/send-otp \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com"}'
+
+5. Thunder Client
+   - VS Code extension
+   - Lightweight Postman alternative
+
+
+================================================================================
+EXAMPLE WORKFLOW FOR TESTING
+================================================================================
+
+1. SEND OTP
+POST http://192.168.1.19:5000/api/auth/send-otp
+{"email": "newuser@example.com"}
+
+2. VERIFY OTP (check email for OTP code)
+POST http://192.168.1.19:5000/api/auth/verify-otp
+{"email": "newuser@example.com", "otp": "12345"}
+
+3. REGISTER
+POST http://192.168.1.19:5000/api/auth/register
+{
+  "name": "New User",
+  "email": "newuser@example.com",
+  "mobile": "9876543210",
+  "password": "SecurePass123",
+  "companyName": "My Company",
+  "chapterId": "[VALID_CHAPTER_ID]"
+}
+(Add files: companyLogo, paymentProof)
+
+4. WAIT FOR ADMIN APPROVAL
+
+5. LOGIN
+POST http://192.168.1.19:5000/api/auth/login
+{"email": "newuser@example.com", "password": "SecurePass123"}
+
+6. USE RETURNED TOKENS
+Save accessToken and refreshToken
+
+7. GET PROFILE
+GET http://192.168.1.19:5000/api/member/profile
+Header: Authorization: Bearer [ACCESS_TOKEN]
+
+8. UPDATE PROFILE
+PUT http://192.168.1.19:5000/api/member/profile
+Header: Authorization: Bearer [ACCESS_TOKEN]
+Add profileImage file and other fields
+
+9. EXPLORE MEMBER DIRECTORY
+GET http://192.168.1.19:5000/api/member/list
+
+10. LOGOUT
+POST http://192.168.1.19:5000/api/auth/logout
+Header: Authorization: Bearer [ACCESS_TOKEN]
+
+
+FORGOT PASSWORD WORKFLOW
+================================================================================
+
+1. REQUEST PASSWORD RESET
+POST http://192.168.1.19:5000/api/auth/forgot-password
+{"email": "newuser@example.com"}
+
+2. CHECK EMAIL FOR PASSWORD RESET LINK
+- Email will contain a link with reset token: http://192.168.1.19:5000/reset-password?token=abc123...
+- Link is valid for 1 hour
+
+3. VERIFY RESET TOKEN (Optional - for validation)
+GET http://192.168.1.19:5000/api/auth/verify-reset-token/abc123...
+
+4. RESET PASSWORD
+POST http://192.168.1.19:5000/api/auth/reset-password
+{
+  "token": "abc123...",
+  "password": "NewSecurePass456",
+  "confirmPassword": "NewSecurePass456"
+}
+
+5. LOGIN WITH NEW PASSWORD
+POST http://192.168.1.19:5000/api/auth/login
+{"email": "newuser@example.com", "password": "NewSecurePass456"}
+
+
+================================================================================
+Document Version: 1.1
+Generated: April 14, 2026
+Updated: Added Forgot Password & Reset Password endpoints
+Server IP: 192.168.1.19
+Server Port: 5000
+API Base URL: http://192.168.1.19:5000
+================================================================================

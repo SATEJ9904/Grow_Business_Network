@@ -1,0 +1,40 @@
+diff --git a/node_modules/react-native/Libraries/Debugging/DebuggingOverlayRegistry.js b/node_modules/react-native/Libraries/Debugging/DebuggingOverlayRegistry.js
+index e81cb95..047832c 100644
+--- a/node_modules/react-native/Libraries/Debugging/DebuggingOverlayRegistry.js
++++ b/node_modules/react-native/Libraries/Debugging/DebuggingOverlayRegistry.js
+@@ -34,8 +34,13 @@ import processColor from '../StyleSheet/processColor';
+ 
+ // TODO(T171193075): __REACT_DEVTOOLS_GLOBAL_HOOK__ is always injected in dev-bundles,
+ // but it is not mocked in some Jest tests. We should update Jest tests setup, so it would be the same as expected testing environment.
+-const reactDevToolsHook: ?ReactDevToolsGlobalHook = (window: $FlowFixMe)
+-  .__REACT_DEVTOOLS_GLOBAL_HOOK__;
++// PATCH: `window` is not guaranteed to be defined yet at the point this module
++// is required (it can load before Libraries/Core/setUpGlobals.js runs), so
++// guard against a bare `window` reference throwing a ReferenceError.
++const globalObject: $FlowFixMe =
++  typeof window !== 'undefined' ? window : global;
++const reactDevToolsHook: ?ReactDevToolsGlobalHook =
++  globalObject.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+ 
+ export type DebuggingOverlayRegistrySubscriberProtocol = {
+   rootViewRef: AppContainerRootViewRef,
+diff --git a/node_modules/react-native/Libraries/ReactNative/AppContainer-dev.js b/node_modules/react-native/Libraries/ReactNative/AppContainer-dev.js
+index 1f90033..dedd2f9 100644
+--- a/node_modules/react-native/Libraries/ReactNative/AppContainer-dev.js
++++ b/node_modules/react-native/Libraries/ReactNative/AppContainer-dev.js
+@@ -27,8 +27,13 @@ import {useRef} from 'react';
+ 
+ const {useEffect, useState, useCallback} = React;
+ 
+-const reactDevToolsHook: ReactDevToolsGlobalHook = (window: $FlowFixMe)
+-  .__REACT_DEVTOOLS_GLOBAL_HOOK__;
++// PATCH: `window` is not guaranteed to be defined yet at the point this module
++// is required (it can load before Libraries/Core/setUpGlobals.js runs), so
++// guard against a bare `window` reference throwing a ReferenceError.
++const globalObject: $FlowFixMe =
++  typeof window !== 'undefined' ? window : global;
++const reactDevToolsHook: ReactDevToolsGlobalHook =
++  globalObject.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+ 
+ // Required for React DevTools to view / edit React Native styles in Flipper.
+ // Flipper doesn't inject these values when initializing DevTools.
