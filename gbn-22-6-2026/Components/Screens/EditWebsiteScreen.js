@@ -13,7 +13,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  SafeAreaView,
   StatusBar,
   Dimensions,
 } from 'react-native';
@@ -27,7 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 import { useNavigation } from '@react-navigation/native';
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -311,7 +310,7 @@ const EditWebsiteScreen = () => {
       }
     } catch (err) {
       console.log('FETCH WEBSITE ERROR:', err?.response?.data || err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     } finally {
       setLoadingWebsite(false);
     }
@@ -323,6 +322,9 @@ const EditWebsiteScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       async response => {
         if (response.didCancel) return;
@@ -351,6 +353,9 @@ const EditWebsiteScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       async response => {
         if (response.didCancel) return;
@@ -378,6 +383,9 @@ const EditWebsiteScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       async response => {
         if (response.didCancel) return;
@@ -418,7 +426,7 @@ const EditWebsiteScreen = () => {
 
         if (!asset) {
           console.log('NO VIDEO ASSET FOUND');
-          Alert.alert('Error', 'No video selected');
+          Alert.alert('Oops!', 'No video selected');
           return;
         }
 
@@ -450,11 +458,11 @@ const EditWebsiteScreen = () => {
           heroVideo: uploadedUrl,
         }));
 
-        Alert.alert('Success', 'Video Updated');
+        Alert.alert('Done! ✅', 'Video Updated');
 
         console.log('HERO VIDEO SAVED:', uploadedUrl);
 
-        Alert.alert('Success', 'Video uploaded successfully');
+        Alert.alert('Done! ✅', 'Video uploaded successfully');
       },
     );
   };
@@ -495,6 +503,9 @@ const EditWebsiteScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       async response => {
         if (response.didCancel) return;
@@ -557,7 +568,7 @@ const EditWebsiteScreen = () => {
 
   const addVideo = () => {
     if (!newVideoItem.title || !newVideoItem.video) {
-      Alert.alert('Error', 'Please select a video');
+      Alert.alert('Oops!', 'Please select a video');
       return;
     }
     setVideoItems(prev => [
@@ -586,7 +597,7 @@ const EditWebsiteScreen = () => {
 
   const addProduct = () => {
     if (!newProductItem.title || !newProductItem.price) {
-      Alert.alert('Error', 'Enter Product Details');
+      Alert.alert('Oops!', 'Enter Product Details');
 
       return;
     }
@@ -709,12 +720,12 @@ const EditWebsiteScreen = () => {
         setWebsiteSlug(res.data.website.slug);
       }
 
-      Alert.alert('Success', 'Website Updated Successfully');
+      Alert.alert('Done! ✅', 'Website Updated Successfully');
     } catch (err) {
       console.log('SAVE WEBSITE ERROR:', err?.response?.data || err);
 
       Alert.alert(
-        'Error',
+        'Oops!',
         getFriendlyErrorMessage(err, 'Failed to save website'),
       );
     }
@@ -740,7 +751,7 @@ const EditWebsiteScreen = () => {
     const url = getPublicWebsiteUrl(websiteSlug);
 
     Linking.openURL(url).catch(err =>
-      Alert.alert('Error', 'Cannot open website URL'),
+      Alert.alert('Oops!', 'Cannot open website URL'),
     );
   };
 
@@ -782,7 +793,7 @@ const EditWebsiteScreen = () => {
   const guardedUpdateWebsite = useGuardedAction(updateWebsite);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#03120A" barStyle="light-content" />
 
       <ScrollView
@@ -1548,7 +1559,7 @@ const EditWebsiteScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -1556,7 +1567,7 @@ export default EditWebsiteScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
 
     backgroundColor: '#F4F7F5',
   },
@@ -1980,15 +1991,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
 
     borderColor: '#E2E8F0',
-  },
-
-  cardImage: {
-    width: '100%',
-    height: 180,
-
-    borderRadius: 20,
-
-    marginBottom: 16,
   },
 
   serviceTitle: {

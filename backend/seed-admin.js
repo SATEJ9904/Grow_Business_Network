@@ -59,6 +59,7 @@ const seedAdmin = async () => {
       mobile: '9876543210',
       password: 'Admin@123',
       companyName: 'GBN Admin',
+      city: 'Admin City',
       chapterId: chapterId,
       role: 'admin',
       status: 'approved',

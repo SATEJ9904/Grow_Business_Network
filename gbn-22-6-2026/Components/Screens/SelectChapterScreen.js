@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
@@ -15,7 +14,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -95,7 +94,7 @@ const SelectChapterScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
   };
 
@@ -115,7 +114,7 @@ const SelectChapterScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
   };
   const getChapters = async city => {
@@ -140,7 +139,7 @@ const SelectChapterScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
 
     setLoading(false);
@@ -238,7 +237,7 @@ const SelectChapterScreen = ({ navigation }) => {
     </Animated.View>
   );
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#031109" barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -447,18 +446,13 @@ const SelectChapterScreen = ({ navigation }) => {
           </Animated.View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
 export default SelectChapterScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F5F4',
-  },
-
   // ================= HEADER =================
 
   header: {
@@ -471,7 +465,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#F3F5F4',
   },
 

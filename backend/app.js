@@ -380,6 +380,7 @@ const uploadsLogosDir = path.join(uploadsDir, "logos");
 const uploadsProfilesDir = path.join(uploadsDir, "profiles");
 const uploadsCoversDir = path.join(uploadsDir, "covers");
 const uploadsInvoicesDir = path.join(uploadsDir, "invoices");
+const uploadsFlyersDir = path.join(uploadsDir, "flyers");
 
 fs.mkdirSync(uploadsImagesDir, { recursive: true });
 fs.mkdirSync(uploadsVideosDir, { recursive: true });
@@ -387,6 +388,7 @@ fs.mkdirSync(uploadsLogosDir, { recursive: true });
 fs.mkdirSync(uploadsProfilesDir, { recursive: true });
 fs.mkdirSync(uploadsCoversDir, { recursive: true });
 fs.mkdirSync(uploadsInvoicesDir, { recursive: true });
+fs.mkdirSync(uploadsFlyersDir, { recursive: true });
 
 // ================= IMPORT MODELS =================
 const Website = require("./models/Website");
@@ -408,6 +410,8 @@ const websiteRoutes = require("./routes/websiteRoutes");
 const chapterRoutes = require("./routes/chapterRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 // ================= DATABASE CHECK =================
 const checkDatabaseConnection = (req, res, next) => {
@@ -504,6 +508,8 @@ app.use("/api/website", websiteRoutes);
 app.use("/api/chapters", chapterRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/meetings", meetingRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ================= ERRORS =================
 app.use(notFoundMiddleware);

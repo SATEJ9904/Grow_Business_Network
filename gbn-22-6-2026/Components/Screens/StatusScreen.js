@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
+import { API_BASE_URL } from '../utils/apiConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -20,16 +20,13 @@ import {
   getFriendlyErrorMessage,
 } from '../utils/guards';
 
-const rawApiUrl = BASE_URL || '192.168.14.149:5001/api/';
-const API_URL = rawApiUrl.startsWith('http')
-  ? rawApiUrl
-  : `http://${rawApiUrl}`;
+const API_URL = API_BASE_URL;
 
 export default function StatusScreen({ navigation }) {
   const [statusData, setStatusData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const spinValue = new Animated.Value(0);
+  const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadStatus();
@@ -205,7 +202,7 @@ export default function StatusScreen({ navigation }) {
   const guardedGoLogin = useGuardedAction(() => navigation.navigate('Login'));
 
   const guardedOpenDashboard = useGuardedAction(() =>
-    Linking.openURL('http://192.168.1.19:5003'),
+    navigation.replace('Dashboard'),
   );
 
   const guardedContactSupport = useGuardedAction(() =>
@@ -384,7 +381,7 @@ export default function StatusScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#EDF2F7' },
+  container: { ...StyleSheet.absoluteFillObject, backgroundColor: '#EDF2F7' },
 
   scrollContent: {
     paddingBottom: 40,

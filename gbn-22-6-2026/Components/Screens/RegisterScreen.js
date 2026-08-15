@@ -15,12 +15,9 @@ import {
   FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
+import { API_BASE_URL } from '../utils/apiConfig';
 
-const rawApiUrl = BASE_URL;
-const API_URL = rawApiUrl.startsWith('http')
-  ? rawApiUrl
-  : `http://${rawApiUrl}`;
+const API_URL = API_BASE_URL;
 import { launchImageLibrary } from 'react-native-image-picker';
 import { Image } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
@@ -111,55 +108,6 @@ export default function RegisterScreen({ navigation }) {
     { _id: '5', name: 'Hyderabad Chapter', city: 'Hyderabad' },
   ];
 
-  const saveTokens = async (accessToken, refreshToken) => {
-    if (accessToken) {
-      await AsyncStorage.setItem('accessToken', accessToken);
-    }
-    if (refreshToken) {
-      await AsyncStorage.setItem('refreshToken', refreshToken);
-    }
-  };
-
-  const getAuthHeaders = async () => {
-    const accessToken = await AsyncStorage.getItem('accessToken');
-    const headers = {};
-    if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`;
-    }
-    return headers;
-  };
-
-  const refreshAccessToken = async () => {
-    try {
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        console.log('No refresh token available');
-        return false;
-      }
-
-      const response = await fetch(`${API_URL}auth/refresh-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success && data.data?.accessToken) {
-        await saveTokens(data.data.accessToken, data.data.refreshToken);
-        console.log('✅ Access token refreshed successfully');
-        return true;
-      }
-
-      console.log('Unable to refresh token:', data.message || response.status);
-      return false;
-    } catch (error) {
-      console.log('Refresh token error:', error.message);
-      return false;
-    }
-  };
-
   useEffect(() => {
     fetchCities();
     fetchChapters();
@@ -173,19 +121,6 @@ export default function RegisterScreen({ navigation }) {
     console.log('Chapters state updated:', chapters);
     console.log('Chapters count:', chapters.length);
   }, [chapters]);
-
-  const initializeApp = async () => {
-    try {
-      console.log('Initializing app and fetching chapters...');
-      await fetchChapters();
-      console.log('Chapters initialized');
-    } catch (error) {
-      console.log('Error initializing chapters:', error);
-      setChaptersLoading(false);
-      setChaptersError('Unable to load chapter list');
-      setChapters(LOCAL_CHAPTERS);
-    }
-  };
 
   const fetchChapters = async () => {
     try {
@@ -319,7 +254,7 @@ export default function RegisterScreen({ navigation }) {
 
         await AsyncStorage.setItem('userStatus', userStatus);
 
-        Alert.alert('Success', data.message || 'Registration successful!');
+        Alert.alert('Done! ✅', data.message || 'Registration successful!');
         navigation.navigate('Login');
       } else if (data.message === 'Email already registered') {
         console.log('User already exists, fetching status...');
@@ -360,14 +295,14 @@ export default function RegisterScreen({ navigation }) {
             navigation.navigate('Status');
           } else {
             Alert.alert(
-              'Error',
+              'Oops!',
               statusData.message || 'Failed to fetch status',
             );
           }
         } catch (error) {
           console.log('Status fetch error:', error);
           Alert.alert(
-            'Error',
+            'Oops!',
             getFriendlyErrorMessage(error, 'Unable to fetch user status'),
           );
         }
@@ -379,7 +314,7 @@ export default function RegisterScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
       setPaymentProcessing(false);
@@ -430,7 +365,7 @@ export default function RegisterScreen({ navigation }) {
 
       if (!orderData.success) {
         Alert.alert(
-          'Error',
+          'Oops!',
           orderData.message || 'Unable to start payment. Please try again.',
         );
         setPaymentProcessing(false);
@@ -491,7 +426,7 @@ export default function RegisterScreen({ navigation }) {
     } catch (error) {
       console.error('Create order error:', error);
       Alert.alert(
-        'Error',
+        'Oops!',
         getFriendlyErrorMessage(
           error,
           'Network error while starting payment. Please try again.',
@@ -582,13 +517,13 @@ export default function RegisterScreen({ navigation }) {
     console.log('🔹 sendOtp() called');
     if (!form.email.trim()) {
       console.warn('❌ Email is empty, cannot send OTP');
-      Alert.alert('Error', 'Please enter your email address first.');
+      Alert.alert('Oops!', 'Please enter your email address first.');
       return;
     }
     const emailError = validateField('email', form.email);
     if (emailError) {
       setErrors(prev => ({ ...prev, email: emailError }));
-      Alert.alert('Error', emailError);
+      Alert.alert('Oops!', emailError);
       return;
     }
     console.log('✅ Email validated:', form.email);
@@ -677,7 +612,7 @@ export default function RegisterScreen({ navigation }) {
   console.log('Form State:', form);
   const verifyOtp = async () => {
     if (!form.otp.trim()) {
-      Alert.alert('Error', 'Please enter the OTP.');
+      Alert.alert('Oops!', 'Please enter the OTP.');
       return;
     }
     setVerifyLoading(true);
@@ -704,7 +639,7 @@ export default function RegisterScreen({ navigation }) {
           console.log('✅ UserId saved to AsyncStorage');
         }
 
-        Alert.alert('Success', data.message);
+        Alert.alert('Done! ✅', data.message);
         setOtpVerified(true);
         setOtpModal(false);
         setForm({ ...form, otp: '' });
@@ -733,7 +668,7 @@ export default function RegisterScreen({ navigation }) {
       }
 
       if (result.errorCode) {
-        Alert.alert('Error', result.errorMessage || 'Image selection failed.');
+        Alert.alert('Oops!', result.errorMessage || 'Image selection failed.');
         return;
       }
 
@@ -741,7 +676,7 @@ export default function RegisterScreen({ navigation }) {
         setLogo(result.assets[0]);
       }
     } catch (error) {
-      Alert.alert('Error', 'Unable to open image library. Please try again.');
+      Alert.alert('Oops!', 'Unable to open image library. Please try again.');
     }
   };
 
@@ -752,14 +687,14 @@ export default function RegisterScreen({ navigation }) {
         validateField('email', form.email) ||
         validateField('mobile', form.mobile);
       Alert.alert(
-        'Error',
+        'Oops!',
         fieldError || 'Please verify your email with OTP before continuing.',
       );
       return;
     }
     if (step === 2 && !isStep2Valid()) {
       Alert.alert(
-        'Error',
+        'Oops!',
         validateField('companyName', form.companyName) ||
           'Please select a chapter.',
       );
@@ -767,7 +702,7 @@ export default function RegisterScreen({ navigation }) {
     }
     if (step === 3 && !isStep4Valid()) {
       Alert.alert(
-        'Error',
+        'Oops!',
         validateField('password', form.password) ||
           validateField('confirmPassword', form.confirmPassword) ||
           'Please complete your account setup.',
@@ -838,7 +773,7 @@ export default function RegisterScreen({ navigation }) {
     } catch (error) {
       console.log('Chapter Fetch Error:', error);
 
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
       setFilteredChapters([]);
     }
   };
@@ -853,7 +788,7 @@ export default function RegisterScreen({ navigation }) {
       }
     } catch (error) {
       console.log('Cities error:', error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
   };
 
@@ -1337,7 +1272,7 @@ export default function RegisterScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     padding: 20,
     backgroundColor: '#e8f4ef',

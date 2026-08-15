@@ -264,7 +264,7 @@ import {
   Alert,
 } from 'react-native';
 import {WebView} from 'react-native-webview';
-import {BASE_URL} from '@env';
+import {API_BASE_URL as BASE_URL} from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -400,10 +400,9 @@ const PreviewScreen = ({html, onClose, company, slug}) => {
               style={styles.webview}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              mixedContentMode="always"
-              allowFileAccess={true}
-              allowUniversalAccessFromFileURLs={true}
-              cacheEnabled={false}
+              originWhitelist={[`${BASE_URL.replace(/\/api\/?$/, '')}/*`]}
+              mixedContentMode="never"
+              cacheEnabled={true}
               startInLoadingState={true}
               onLoadStart={() => {
                 console.log('WEBVIEW LOAD START');
@@ -453,7 +452,7 @@ const PreviewScreen = ({html, onClose, company, slug}) => {
 
 const styles = StyleSheet.create({
   background: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#f8fafc',
   },
   container: {

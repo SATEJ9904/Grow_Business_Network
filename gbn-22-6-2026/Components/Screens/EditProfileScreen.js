@@ -13,7 +13,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Image,
   TextInput,
@@ -22,7 +21,7 @@ import {
   Keyboard,
   ActivityIndicator,
 } from 'react-native';
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -32,8 +31,6 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
-
-// const BASE_URL = 'http://192.168.14.149:5001';
 
 // Uncontrolled TextInput component with ref - NEVER re-renders
 const TextInputField = memo(
@@ -216,7 +213,7 @@ const EditProfileScreen = () => {
       }
     } catch (err) {
       console.log(err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     } finally {
       setLoadingProfile(false);
     }
@@ -282,7 +279,9 @@ const EditProfileScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 1,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       response => {
         if (response.assets?.length > 0) {
@@ -296,7 +295,9 @@ const EditProfileScreen = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 1,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       response => {
         if (response.assets?.length > 0) {
@@ -312,16 +313,11 @@ const EditProfileScreen = () => {
       setSaving(true);
 
       const token = await AsyncStorage.getItem('accessToken');
-      console.log(
-        '🔑 [TOKEN CHECK] Token retrieved:',
-        token ? 'YES ✓' : 'NO ✗',
-      );
-      console.log('🔑 [TOKEN LENGTH]:', token?.length || 0);
 
       if (!token) {
         console.log('❌ [TOKEN ERROR] No token found in AsyncStorage');
         Alert.alert(
-          'Error',
+          'Oops!',
           'No authentication token found. Please login again.',
         );
         return;
@@ -329,7 +325,7 @@ const EditProfileScreen = () => {
 
       if (!BASE_URL) {
         console.log('❌ [URL ERROR] BASE_URL is not defined');
-        Alert.alert('Error', 'API endpoint not configured. Contact support.');
+        Alert.alert('Oops!', 'API endpoint not configured. Contact support.');
         return;
       }
 
@@ -342,17 +338,6 @@ const EditProfileScreen = () => {
       };
 
       console.log('📤 [SAVING PROFILE] Attempt:', retryCount + 1);
-      console.log('🌐 [BASE_URL]:', BASE_URL);
-      console.log(
-        '🔑 [TOKEN]:',
-        token ? token.substring(0, 20) + '...' : 'NO TOKEN',
-      );
-      console.log('📋 [FORM DATA BEFORE MERGE]:', profileForm);
-      console.log('📝 [FORM DATA FROM REF]:', formValuesRef.current);
-      console.log('✅ [FINAL FORM DATA]:', finalFormData);
-
-      const fieldsCount = Object.keys(finalFormData).length;
-      console.log('📊 [TOTAL FIELDS]:', fieldsCount);
 
       const payload = {
         name: finalFormData.name,
@@ -412,14 +397,6 @@ const EditProfileScreen = () => {
       }
 
       const apiUrl = `${BASE_URL}member/profile`;
-      console.log('📡 [API URL]:', apiUrl);
-      console.log('📡 [REQUEST METHOD]: PUT');
-      console.log('📡 [REQUEST TIMEOUT]: 30000ms');
-      console.log('📡 [CONTENT TYPE]: multipart/form-data');
-      console.log(
-        '📡 [AUTH HEADER]: Bearer ' + token?.substring(0, 20) + '...',
-      );
-
       const response = await axios.put(apiUrl, formData, {
         timeout: 120000,
         headers: {
@@ -427,82 +404,27 @@ const EditProfileScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('🚀 [REQUEST SENDING] Making PUT request to:', apiUrl);
-
-      console.log('✅ [SUCCESS RESPONSE] Response received:', response.data);
-      console.log('✅ [STATUS CODE]:', response.status);
-      console.log('✅ [STATUS TEXT]:', response.statusText);
 
       // Update state after successful save
       setProfileForm(finalFormData);
       formValuesRef.current = { ...finalFormData };
 
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert('Done! ✅', 'Profile updated successfully');
     } catch (error) {
-      console.log('\n❌❌❌ [ERROR CAUGHT] ❌❌❌');
-      console.log('⏰ [ERROR TIME]:', new Date().toISOString());
-      console.log('🔄 [RETRY ATTEMPT]:', retryCount);
-
-      // Full error object
-      console.log('📦 [FULL ERROR OBJECT]:', JSON.stringify(error, null, 2));
-
-      // Error message and code
-      console.log('❌ [ERROR MESSAGE]:', error.message);
-      console.log('❌ [ERROR CODE]:', error.code);
-      console.log('❌ [ERROR NAME]:', error.name);
-
-      // Network-specific errors
-      console.log('🌐 [ERROR CONFIG]:', {
-        method: error.config?.method,
-        url: error.config?.url,
-        timeout: error.config?.timeout,
-        headers: error.config?.headers,
-      });
-
-      // Response information
-      console.log('📥 [RESPONSE STATUS]:', error.response?.status);
-      console.log('📥 [RESPONSE STATUS TEXT]:', error.response?.statusText);
-      console.log('📥 [RESPONSE DATA]:', error.response?.data);
-      console.log('📥 [RESPONSE HEADERS]:', error.response?.headers);
-
-      // Request information
-      console.log('📤 [REQUEST]:', {
-        method: error.request?.method,
-        url: error.request?.url,
-        timeout: error.request?.timeout,
-        responseType: error.request?.responseType,
-      });
-
-      // Platform-specific error details
-      if (error.response === undefined && error.request === undefined) {
-        console.log(
-          '⚠️  [ERROR TYPE]: Client setup error (no network request made)',
-        );
-      } else if (error.response === undefined) {
-        console.log(
-          '⚠️  [ERROR TYPE]: Network error (request sent but no response)',
-        );
-        console.log('🔍 [NETWORK DETAILS]:', {
-          readyState: error.request?.readyState,
-          status: error.request?.status,
-          statusText: error.request?.statusText,
-        });
-      } else {
-        console.log('⚠️  [ERROR TYPE]: Server responded with error');
-      }
-
-      console.log('❌❌❌ [END ERROR LOG] ❌❌❌\n');
+      console.log(
+        '❌ Profile save failed:',
+        error.code || error.message,
+        'status:',
+        error.response?.status,
+      );
 
       let errorMessage = 'Network error occurred';
       let canRetry = false;
 
-      console.log('\n🔍 [ERROR CLASSIFICATION]');
       if (error.code === 'ECONNABORTED') {
-        console.log('📍 Diagnosis: Request timeout');
         errorMessage = 'Request timeout. Server took too long to respond.';
         canRetry = true;
       } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-        console.log('📍 Diagnosis: Cannot connect to server');
         errorMessage =
           'Cannot connect to server. Check your internet connection.';
         canRetry = true;
@@ -510,36 +432,23 @@ const EditProfileScreen = () => {
         error.message === 'Network Error' ||
         error.code === 'ERR_NETWORK'
       ) {
-        console.log('📍 Diagnosis: Network connection failed');
         errorMessage =
           'Network connection failed. Check internet and try again.';
         canRetry = true;
       } else if (error.response?.status === 401) {
-        console.log(
-          '📍 Diagnosis: Unauthorized - Session expired or invalid token',
-        );
         errorMessage = 'Session expired. Please login again.';
       } else if (error.response?.status === 403) {
-        console.log('📍 Diagnosis: Forbidden - Permission denied');
         errorMessage = 'Permission denied. You cannot update this profile.';
       } else if (error.response?.status === 404) {
-        console.log('📍 Diagnosis: Not Found - API endpoint incorrect');
         errorMessage = 'Profile endpoint not found. Check API configuration.';
       } else if (error.response?.status === 500) {
-        console.log('📍 Diagnosis: Server error');
         errorMessage = 'Server error. Please try again later.';
         canRetry = true;
       } else if (error.response?.data?.message) {
-        console.log('📍 Diagnosis: Server returned error message');
         errorMessage = error.response.data.message;
       } else {
-        console.log('📍 Diagnosis: Unknown error -', error.message);
         errorMessage = error.message || 'Unknown error occurred';
       }
-
-      console.log('💬 [ERROR MESSAGE SHOWN]:', errorMessage);
-      console.log('🔄 [CAN RETRY]:', canRetry);
-      console.log('🔍 [ERROR CLASSIFICATION END]\n');
 
       const alertButtons = [
         {
@@ -617,7 +526,7 @@ const EditProfileScreen = () => {
                   } catch (error) {
                     console.log(error.response?.data);
                     Alert.alert(
-                      'Error',
+                      'Oops!',
                       getFriendlyErrorMessage(error, 'Failed to delete profile'),
                     );
                   }
@@ -700,7 +609,7 @@ const EditProfileScreen = () => {
   const guardedDeleteProfile = useGuardedAction(deleteProfile);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       <ScrollView
@@ -993,7 +902,7 @@ const EditProfileScreen = () => {
           <Text style={styles.deleteButtonText}>Delete Profile</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -1001,7 +910,7 @@ export default EditProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#F5F5F5',
   },
 

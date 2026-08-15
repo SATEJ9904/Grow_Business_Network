@@ -18,21 +18,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import PreviewScreen from './PreviewScreen';
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
-
-const LOCAL_BACKEND_HOST = Platform.select({
-  android: 'http://192.168.14.149',
-  ios: 'http://192.168.14.149',
-  default: 'http://192.168.14.149',
-});
-
-// const BASE_URL = `${LOCAL_BACKEND_HOST}:5001`;
-const PYTHON_URL = `${LOCAL_BACKEND_HOST}:5002`;
 
 const AccountScreen = () => {
   const navigation = useNavigation();
@@ -148,7 +139,7 @@ const AccountScreen = () => {
   const fetchCurrentUser = async () => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
-      const res = await axios.get(`${BASE_URL}/api/member/profile`, {
+      const res = await axios.get(`${BASE_URL}member/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data.data;
@@ -164,7 +155,7 @@ const AccountScreen = () => {
         'AccountScreen fetchCurrentUser error',
         err?.response?.data || err.message,
       );
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
@@ -200,7 +191,7 @@ const AccountScreen = () => {
 
   const fetchMyWebsite = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/website/website/${userId}`);
+      const res = await axios.get(`${BASE_URL}website/website/${userId}`);
       const site = res.data.website;
       if (site) {
         let services = [];
@@ -279,7 +270,7 @@ const AccountScreen = () => {
       }
     } catch (err) {
       console.log('AccountScreen fetchMyWebsite error', err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
@@ -288,10 +279,10 @@ const AccountScreen = () => {
     setUpdating(true);
     try {
       const token = await AsyncStorage.getItem('accessToken');
-      await axios.put(`${BASE_URL}/api/member/profile`, profileForm, {
+      await axios.put(`${BASE_URL}member/profile`, profileForm, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert('Done! ✅', 'Profile updated successfully');
       setIsEditingProfile(false);
       await fetchCurrentUser();
     } catch (err) {
@@ -299,7 +290,7 @@ const AccountScreen = () => {
         'AccountScreen updateMyProfile error',
         err?.response?.data || err.message,
       );
-      Alert.alert('Error', getFriendlyErrorMessage(err, 'Failed to update profile'));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err, 'Failed to update profile'));
     }
     setUpdating(false);
   };
@@ -379,7 +370,7 @@ const AccountScreen = () => {
       console.log('🚀 WEBSITE PAYLOAD:', payload);
 
       const res = await axios.post(
-        `${BASE_URL}/api/website/save-website`,
+        `${BASE_URL}website/save-website`,
 
         payload,
       );
@@ -392,13 +383,13 @@ const AccountScreen = () => {
 
       await fetchMyWebsite();
 
-      Alert.alert('Success', 'Website Updated Successfully');
+      Alert.alert('Done! ✅', 'Website Updated Successfully');
 
       setIsEditingWebsite(false);
     } catch (err) {
       console.log('❌ WEBSITE ERROR:', err.response?.data || err.message);
 
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     } finally {
       setSavingWebsite(false);
     }
@@ -430,7 +421,7 @@ const AccountScreen = () => {
             try {
               const token = await AsyncStorage.getItem('accessToken');
               await axios.put(
-                `${BASE_URL}/api/member/delete/${userId}`,
+                `${BASE_URL}member/delete/${userId}`,
                 {},
                 {
                   headers: { Authorization: `Bearer ${token}` },
@@ -444,7 +435,7 @@ const AccountScreen = () => {
                 err?.response?.data || err.message,
               );
               Alert.alert(
-                'Error',
+                'Oops!',
                 getFriendlyErrorMessage(err, 'Failed to deactivate account'),
               );
             }
@@ -454,7 +445,7 @@ const AccountScreen = () => {
     );
   };
   const pickLogo = async () => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
+    launchImageLibrary({ mediaType: 'photo', maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) return;
 
@@ -470,7 +461,7 @@ const AccountScreen = () => {
   };
 
   const pickServiceImageForNew = async () => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
+    launchImageLibrary({ mediaType: 'photo', maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) return;
       const asset = response.assets?.[0];
@@ -488,7 +479,7 @@ const AccountScreen = () => {
   };
 
   const pickServiceImageForItem = async index => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
+    launchImageLibrary({ mediaType: 'photo', maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) return;
       const asset = response.assets?.[0];
@@ -547,7 +538,7 @@ const AccountScreen = () => {
   };
   const addProduct = () => {
     if (!newProductItem.title || !newProductItem.price) {
-      Alert.alert('Error', 'Please enter product details');
+      Alert.alert('Oops!', 'Please enter product details');
 
       return;
     }
@@ -575,7 +566,7 @@ const AccountScreen = () => {
   };
   const pickProductImage = async () => {
     launchImageLibrary(
-      { mediaType: 'photo' },
+      { mediaType: 'photo', maxWidth: 1600, maxHeight: 1600, quality: 0.8 },
 
       response => {
         if (response.didCancel) return;
@@ -1426,7 +1417,7 @@ const AccountScreen = () => {
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#eef4fb',
   },
   header: {

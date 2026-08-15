@@ -69,7 +69,7 @@ export function useDelayedNotice(active, delayMs = 8000) {
  */
 export function getFriendlyErrorMessage(
   error,
-  fallback = 'Something went wrong. Please try again.',
+  fallback = "Something didn't go as planned there — please give it another try.",
 ) {
   if (!error) return fallback;
 
@@ -82,11 +82,11 @@ export function getFriendlyErrorMessage(
     /network request failed/i.test(rawMessage) ||
     /failed to fetch/i.test(rawMessage)
   ) {
-    return 'No internet connection. Please check your network and try again.';
+    return "I can't reach the internet from here — check your connection and try again.";
   }
 
   if (error.name === 'AbortError' || /timeout/i.test(rawMessage)) {
-    return 'The request timed out. Please check your connection and try again.';
+    return "That took too long and timed out — check your connection and give it another go.";
   }
 
   // axios failures: no `response` means the request never reached the
@@ -95,9 +95,9 @@ export function getFriendlyErrorMessage(
   if (error.isAxiosError) {
     if (!error.response) {
       if (error.code === 'ECONNABORTED') {
-        return 'The request timed out. Please check your connection and try again.';
+        return "That took too long and timed out — check your connection and give it another go.";
       }
-      return 'No internet connection. Please check your network and try again.';
+      return "I can't reach the internet from here — check your connection and try again.";
     }
     return error.response.data?.message || fallback;
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -15,14 +15,14 @@ import {
   Alert,
   ScrollView,
   Share,
-  AppState,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import PreviewScreen from './PreviewScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
+import { PYTHON_SERVICE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -32,8 +32,6 @@ import {
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
-
-const EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000;
 
 const AllProfilesScreen = () => {
   const navigation = useNavigation();
@@ -65,30 +63,13 @@ const AllProfilesScreen = () => {
 
   const [currentUser, setCurrentUser] = useState(null);
 
-  const LOCAL_BACKEND_HOST = Platform.select({
-    android: 'http://192.168.14.149',
-    ios: 'http://192.168.14.149',
-    default: 'http://192.168.14.149',
-  });
-
-  // const BASE_URL = `${LOCAL_BACKEND_HOST}:5001`;
-  const PYTHON_URL = `${LOCAL_BACKEND_HOST}:5002`;
-
   useEffect(() => {
     const loadUser = async () => {
       try {
-        console.log('📦 Loading user from AsyncStorage...');
-
         const id = await AsyncStorage.getItem('userId');
-        const token = await AsyncStorage.getItem('accessToken');
-
-        console.log('✅ Loaded UserID:', id);
-        console.log('✅ Loaded Token:', token);
 
         if (id) {
           setUserId(id);
-        } else {
-          console.log('❌ No userId found');
         }
       } catch (error) {
         console.log('🚨 AsyncStorage Error:', error);
@@ -101,34 +82,6 @@ const AllProfilesScreen = () => {
   useEffect(() => {
     fetchUsers('');
   }, []);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener(
-      'change',
-      async nextState => {
-        if (nextState === 'active') {
-          try {
-            const loginTime = await AsyncStorage.getItem('loginTime');
-            if (!loginTime) {
-              return;
-            }
-
-            if (Date.now() - parseInt(loginTime, 10) > EXPIRY_TIME) {
-              console.log(
-                '⚠️ Session expired on resume, clearing storage and redirecting',
-              );
-              await AsyncStorage.clear();
-              navigation.replace('Login');
-            }
-          } catch (err) {
-            console.log('🚨 AppState expiry check failed:', err);
-          }
-        }
-      },
-    );
-
-    return () => subscription.remove();
-  }, [navigation]);
 
   useEffect(() => {
     if (userId) {
@@ -147,24 +100,40 @@ const AllProfilesScreen = () => {
       searchText ? setSearchLoading(true) : setLoading(true);
 
       const url = searchText
-        ? `${BASE_URL}/api/member/search?search=${searchText}`
-        : `${BASE_URL}/api/member/list?page=1&limit=50`;
+        ? `${BASE_URL}member/search?search=${searchText}`
+        : `${BASE_URL}member/list?page=1&limit=50`;
 
       const res = await axios.get(url);
 
       setData(res.data.data || []);
     } catch (err) {
       console.log('FETCH ERROR:', err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
 
     setLoading(false);
     setSearchLoading(false);
   };
 
+  const searchDebounceRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
+
   const handleSearch = text => {
     setSearch(text);
-    fetchUsers(text);
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      fetchUsers(text);
+    }, 400);
   };
 
   const fetchCurrentUser = async () => {
@@ -173,15 +142,13 @@ const AllProfilesScreen = () => {
 
       const token = await AsyncStorage.getItem('accessToken');
 
-      const res = await axios.get(`${BASE_URL}/api/member/profile`, {
+      const res = await axios.get(`${BASE_URL}member/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       const user = res.data.data;
-
-      console.log('✅ USER:', user);
 
       setCurrentUser(user);
 
@@ -195,12 +162,12 @@ const AllProfilesScreen = () => {
       setWebsiteHtml(user.websiteHtml || '');
     } catch (err) {
       console.log('🚨 User fetch error:', err.response?.data || err.message);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
   const fetchMyWebsite = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/website/website/${userId}`);
+      const res = await axios.get(`${BASE_URL}website/website/${userId}`);
       const site = res.data.website;
 
       if (site) {
@@ -216,13 +183,13 @@ const AllProfilesScreen = () => {
       }
     } catch (err) {
       console.log(err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
   const fetchUserProfile = async id => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/member/${id}`);
+      const res = await axios.get(`${BASE_URL}member/${id}`);
 
       setData(prev =>
         prev.map(item =>
@@ -231,14 +198,17 @@ const AllProfilesScreen = () => {
       );
     } catch (err) {
       console.log('❌ ERROR:', err.response?.data || err.message);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
   const updateWebsite = async () => {
     try {
       if (!editWebsiteForm.company?.trim()) {
-        alert('Please enter your company name');
+        Alert.alert(
+          'Just one more thing',
+          "I'll need your company name before I can build your website.",
+        );
         return;
       }
 
@@ -253,7 +223,7 @@ const AllProfilesScreen = () => {
       formData.append('footerInfo', editWebsiteForm.footerInfo || '');
 
       formData.append('footer_info', editWebsiteForm.footerInfo || '');
-      const res = await axios.post(`${PYTHON_URL}/generate`, formData, {
+      const res = await axios.post(`${PYTHON_SERVICE_URL}/generate`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -262,7 +232,10 @@ const AllProfilesScreen = () => {
       console.log('🔥 API RESPONSE:', res.data);
 
       if (!res.data?.websites || res.data.websites.length === 0) {
-        alert('Failed to generate website ❌');
+        Alert.alert(
+          "Hmm, that didn't work",
+          "I couldn't generate a website this time — give it another try in a moment.",
+        );
         return;
       }
 
@@ -281,13 +254,16 @@ const AllProfilesScreen = () => {
 
       // ❗ FIX: REMOVE LENGTH CHECK
       if (!updatedHtml) {
-        alert('Website generation failed ❌');
+        Alert.alert(
+          'Generation failed',
+          "Something went wrong while building your website. Let's try that again.",
+        );
         return;
       }
 
       console.log('💾 Saving website...');
 
-      const saveRes = await axios.post(`${BASE_URL}/api/website/save-website`, {
+      const saveRes = await axios.post(`${BASE_URL}website/save-website`, {
         heroTitle: editWebsiteForm.heroTitle,
 
         heroHighlight: editWebsiteForm.heroHighlight,
@@ -321,14 +297,14 @@ const AllProfilesScreen = () => {
       await fetchMyWebsite();
       setIsEditingWebsite(false);
 
-      alert('Website Updated ✅');
+      Alert.alert('All set! 🎉', 'Your website is live with the latest changes.');
     } catch (err) {
       console.log('❌ FULL ERROR:', err);
       console.log('❌ MESSAGE:', err.message);
       console.log('❌ RESPONSE:', err.response?.data);
       console.log('❌ CONFIG:', err.config);
       Alert.alert(
-        'Error',
+        'Oops!',
         getFriendlyErrorMessage(err, 'Failed to update website. Please try again.'),
       );
     }
@@ -337,14 +313,14 @@ const AllProfilesScreen = () => {
   // ================= UPDATE =================
   const updateUserProfile = async id => {
     try {
-      await axios.put(`${BASE_URL}/api/admin/member/${id}`, editForm);
+      await axios.put(`${BASE_URL}admin/member/${id}`, editForm);
 
-      alert('Updated Successfully ✅');
+      Alert.alert('Done! ✅', "This member's profile has been updated.");
       setEditingUserId(null);
       fetchUserProfile(id);
     } catch (err) {
       console.log(err);
-      Alert.alert('Error', getFriendlyErrorMessage(err, 'Update failed. Please try again.'));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err, 'Update failed. Please try again.'));
     }
   };
 
@@ -362,7 +338,7 @@ const AllProfilesScreen = () => {
               const token = await AsyncStorage.getItem('accessToken');
 
               const res = await axios.put(
-                `${BASE_URL}/api/member/delete/${userId}`,
+                `${BASE_URL}member/delete/${userId}`,
                 {},
                 {
                   headers: {
@@ -385,7 +361,7 @@ const AllProfilesScreen = () => {
               console.log('DELETE ERROR:', err?.response?.data || err.message);
 
               Alert.alert(
-                'Error',
+                'Oops!',
                 getFriendlyErrorMessage(err, 'Failed to deactivate account.'),
               );
             }
@@ -400,7 +376,7 @@ const AllProfilesScreen = () => {
     try {
       console.log('📡 Fetching website for:', userId);
 
-      const res = await axios.get(`${BASE_URL}/api/website/website/${userId}`);
+      const res = await axios.get(`${BASE_URL}website/website/${userId}`);
       const site = res.data.website;
 
       console.log('🎯 Found Site:', site);
@@ -412,7 +388,7 @@ const AllProfilesScreen = () => {
       );
     } catch (err) {
       console.log('🚨 Website Error:', err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
@@ -469,13 +445,13 @@ const AllProfilesScreen = () => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
 
-      await axios.put(`${BASE_URL}/api/member/profile`, profileForm, {
+      await axios.put(`${BASE_URL}member/profile`, profileForm, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      alert('Updated ✅');
+      Alert.alert('Saved! ✅', 'Your profile has been updated.');
 
       // Refresh user data from backend
       await fetchCurrentUser();
@@ -484,7 +460,7 @@ const AllProfilesScreen = () => {
       setIsEditingProfile(false);
     } catch (err) {
       console.log(err.response?.data || err.message);
-      Alert.alert('Error', getFriendlyErrorMessage(err, 'Update failed. Please try again.'));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err, 'Update failed. Please try again.'));
     }
 
     setUpdating(false);
@@ -492,7 +468,10 @@ const AllProfilesScreen = () => {
 
   const shareWebsite = () => {
     if (!editWebsiteForm.company) {
-      alert('Please create website first');
+      Alert.alert(
+        'No website yet',
+        "You'll need to create your website before you can share it.",
+      );
       return;
     }
 
@@ -570,7 +549,7 @@ const AllProfilesScreen = () => {
   };
 
   // ================= ITEM =================
-  const renderItem = ({ item }) => {
+  const renderItem = useCallback(({ item }) => {
     const isExpanded = expandedId === item._id;
 
     return (
@@ -657,10 +636,10 @@ const AllProfilesScreen = () => {
         </View>
       </View>
     );
-  };
+  }, [expandedId, guardedToggleExpand, guardedViewWebsite]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#f8fafc' }]}>
       {/* ================= GRADIENT HEADER ================= */}
       <View style={styles.gradientHeader}>
         <View style={styles.headerContent}>

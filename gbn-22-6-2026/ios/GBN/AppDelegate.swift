@@ -24,14 +24,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "GBN",
+      withModuleName: "BusinessGrowNetwork",
       in: window,
       launchOptions: launchOptions
     )
 
+    #if !targetEnvironment(simulator)
     if let window = window {
       AppDelegate.preventScreenCapture(of: window)
     }
+    #endif
 
     return true
   }
@@ -41,7 +43,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   // under a secure-text-entry layer: iOS excludes secure layers from
   // screenshots, the app switcher snapshot, and screen recordings, so any
   // capture of the app shows a blank view instead of real content.
+  //
+  // This relies on window.layer already being hosted by the window server
+  // (i.e. having a superlayer) so the reparenting below detaches
+  // secureField's layer from window.layer first. On the Simulator that
+  // precondition doesn't hold the same way it does on device, so the final
+  // addSublayer(window.layer) below creates a cycle in the layer tree
+  // (window -> secureLayer -> secureField -> window), sending UIKit's
+  // safe-area pass into infinite recursion and crashing the app on launch.
+  // Only run this on real devices; callers must gate with
+  // #if !targetEnvironment(simulator).
   private static func preventScreenCapture(of window: UIWindow) {
+    guard let windowSuperlayer = window.layer.superlayer else { return }
+
     let secureField = UITextField()
     secureField.isSecureTextEntry = true
     secureField.isUserInteractionEnabled = false
@@ -53,7 +67,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       secureField.centerXAnchor.constraint(equalTo: window.centerXAnchor),
       secureField.centerYAnchor.constraint(equalTo: window.centerYAnchor),
     ])
-    window.layer.superlayer?.addSublayer(secureField.layer)
+    windowSuperlayer.addSublayer(secureField.layer)
 
     guard let secureLayer = secureField.layer.sublayers?.first else { return }
     secureLayer.addSublayer(window.layer)

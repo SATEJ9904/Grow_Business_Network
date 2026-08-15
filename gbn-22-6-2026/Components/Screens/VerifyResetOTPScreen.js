@@ -9,10 +9,10 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import { BASE_URL } from '@env';
+import { API_BASE_URL } from '../utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
 
-const API_URL = BASE_URL;
+const API_URL = API_BASE_URL;
 
 export default function VerifyResetOTPScreen({
   route,
@@ -25,7 +25,7 @@ export default function VerifyResetOTPScreen({
 
   const verifyOtp = async () => {
     if (!otp) {
-      Alert.alert('Error', 'Enter OTP');
+      Alert.alert('Oops!', 'Enter OTP');
       return;
     }
 
@@ -56,13 +56,13 @@ export default function VerifyResetOTPScreen({
         });
       } else {
         Alert.alert(
-          'Error',
+          'Oops!',
           data.message || 'Invalid OTP',
         );
       }
     } catch (error) {
       Alert.alert(
-        'Error',
+        'Oops!',
         getFriendlyErrorMessage(error),
       );
     }
@@ -110,7 +110,7 @@ export default function VerifyResetOTPScreen({
 
 const styles = StyleSheet.create({
   container:{
-    flex:1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent:'center',
     padding:20,
     backgroundColor:'#fff',

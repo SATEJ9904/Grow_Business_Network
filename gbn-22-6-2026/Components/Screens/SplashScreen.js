@@ -76,7 +76,6 @@ export default function SplashScreen({ navigation, route }) {
       }),
     ]).start(() => {
       if (token) {
-        console.log('🔐 Deep link detected with token:', token);
         setInitializing(false);
         navigation.replace('ResetPassword', { token });
       } else {

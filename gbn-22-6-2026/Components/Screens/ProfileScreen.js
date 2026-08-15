@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   ScrollView,
@@ -19,7 +18,7 @@ import {
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -49,8 +48,6 @@ const ProfileScreen = ({ route }) => {
     try {
       const response = await axios.get(`${BASE_URL}member/${userId}`);
 
-      console.log('FULL API RESPONSE:', JSON.stringify(response.data, null, 2));
-
       if (response.data.success) {
         const userData = response.data.data;
 
@@ -75,7 +72,7 @@ const ProfileScreen = ({ route }) => {
         'PROFILE FETCH ERROR:',
         error?.response?.data || error.message,
       );
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -93,7 +90,9 @@ const ProfileScreen = ({ route }) => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 1,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       response => {
         if (response.assets?.length > 0) {
@@ -107,7 +106,9 @@ const ProfileScreen = ({ route }) => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 1,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
       },
       response => {
         if (response.assets?.length > 0) {
@@ -193,7 +194,7 @@ const ProfileScreen = ({ route }) => {
     let url = '';
 
     if (user?.websiteSlug) {
-      url = `http://192.168.14.149:5001/site/${user.websiteSlug}`;
+      url = `${BASE_URL.replace(/\/api\/?$/, '')}/site/${user.websiteSlug}`;
     } else if (user?.website) {
       url = user.website;
 
@@ -238,7 +239,7 @@ const ProfileScreen = ({ route }) => {
   const guardedOpenLinkedin = useGuardedAction(openLinkedin);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
 
       <ScrollView
@@ -395,7 +396,7 @@ const ProfileScreen = ({ route }) => {
 
                 <Text style={styles.topValue}>
                   {user?.websiteSlug
-                    ? `http://192.168.14.149:5001/site/${user.websiteSlug}`
+                    ? `${BASE_URL.replace(/\/api\/?$/, '')}/site/${user.websiteSlug}`
                     : user?.website || 'Not Added'}
                 </Text>
               </View>
@@ -485,7 +486,7 @@ const ProfileScreen = ({ route }) => {
 
         {/* PREMIUM CARD */}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -493,7 +494,7 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#F3F2EF',
   },
   loadingBanner: {

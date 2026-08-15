@@ -12,12 +12,11 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@env';
+import { API_BASE_URL } from '../utils/apiConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
 
-// const rawApiUrl =  '192.168.14.149:5001/api/';
-const API_URL = BASE_URL;
+const API_URL = API_BASE_URL;
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,7 +32,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!identifier.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter your email/username and password');
+      Alert.alert('Oops!', 'Please enter your email/username and password');
       return;
     }
 
@@ -96,23 +95,16 @@ export default function LoginScreen({ navigation }) {
         const accessToken = data?.data?.accessToken || data?.accessToken;
         const refreshToken = data?.data?.refreshToken || data?.refreshToken;
 
-        console.log('👤 User:', user);
-        console.log('🔐 Access Token:', accessToken);
-        console.log('📊 Refresh Token:', refreshToken);
-
         if (accessToken) {
           await AsyncStorage.setItem('accessToken', accessToken);
-          console.log('✅ AccessToken Saved');
         }
 
         if (refreshToken) {
           await AsyncStorage.setItem('refreshToken', refreshToken);
-          console.log('✅ RefreshToken Saved');
         }
 
         if (user?._id) {
           await AsyncStorage.setItem('userId', user._id);
-          console.log('✅ UserID Saved:', user._id);
         }
 
         if (user) {
@@ -139,7 +131,7 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       console.log('🚨 Network Error:', error);
       console.log('🌐 Trying URL:', `${API_URL}auth/login`);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
       console.log('🔄 Loading End');
@@ -152,7 +144,7 @@ export default function LoginScreen({ navigation }) {
     const trimmedIdentifier = identifier.trim();
 
     if (!trimmedIdentifier) {
-      Alert.alert('Error', 'Enter your email address');
+      Alert.alert('Oops!', 'Enter your email address');
       return;
     }
 
@@ -160,7 +152,7 @@ export default function LoginScreen({ navigation }) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedIdentifier)) {
       Alert.alert(
-        'Error',
+        'Oops!',
         'Enter your email address (not username) to reset your password',
       );
       return;
@@ -190,11 +182,11 @@ export default function LoginScreen({ navigation }) {
           email: trimmedIdentifier,
         });
       } else {
-        Alert.alert('Error', data.message || 'Unable to send reset link');
+        Alert.alert('Oops!', data.message || 'Unable to send reset link');
       }
     } catch (err) {
       console.log('🚨 Forgot Password Network Error:', err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     } finally {
       setForgotLoading(false);
     }
@@ -296,7 +288,7 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     paddingHorizontal: scale(20),
     justifyContent: 'center',
   },

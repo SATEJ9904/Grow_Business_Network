@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   FlatList,
@@ -18,7 +17,7 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-import { BASE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -77,7 +76,7 @@ const MembersScreen = ({ navigation, route }) => {
       console.log(error);
       setMembers([]);
       setFilteredMembers([]);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
 
     setLoading(false);
@@ -127,7 +126,7 @@ const MembersScreen = ({ navigation, route }) => {
       Alert.alert('Website not found');
     } catch (error) {
       console.log('WEBSITE ERROR:', error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
   };
 
@@ -160,7 +159,7 @@ const MembersScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.log('ERROR:', error);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     }
   });
 
@@ -263,7 +262,7 @@ const MembersScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#041109" barStyle="light-content" />
 
       {/* ================= HEADER ================= */}
@@ -345,7 +344,7 @@ const MembersScreen = ({ navigation, route }) => {
           </Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -353,7 +352,7 @@ export default MembersScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#F3F5F4',
   },
 

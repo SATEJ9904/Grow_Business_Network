@@ -21,7 +21,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import PreviewScreen from './PreviewScreen';
-import { BASE_URL } from '@env';
+import { PYTHON_SERVICE_URL } from '@env';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -100,22 +101,12 @@ const GenerateScreen = ({ navigation }) => {
     }
   }, [userId]);
 
-  const BACKEND_HOST = Platform.select({
-    android: 'http://192.168.14.149',
-    ios: 'http://192.168.14.149',
-    default: 'http://192.168.14.149',
-  });
-  // const BASE_URL = `${BACKEND_HOST}:5001`;
-  const PYTHON_BACKEND_PORT = 5002;
-  const PYTHON_BACKEND_URL = `${BACKEND_HOST}:${PYTHON_BACKEND_PORT}`;
-  console.log('Python Backend URL:', PYTHON_BACKEND_URL);
-
-  const GENERATE_URL = `${PYTHON_BACKEND_URL}/generate`;
+  const GENERATE_URL = `${PYTHON_SERVICE_URL}/generate`;
 
   const fetchCurrentUser = async () => {
     try {
       const token = await AsyncStorage.getItem('accessToken');
-      const res = await axios.get(`${BASE_URL}/api/member/profile`, {
+      const res = await axios.get(`${BASE_URL}member/profile`, {
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
         },
@@ -135,13 +126,13 @@ const GenerateScreen = ({ navigation }) => {
         'GenerateScreen fetchCurrentUser error',
         err?.response?.data || err.message,
       );
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
   const fetchMyWebsite = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/website/website/${userId}`);
+      const res = await axios.get(`${BASE_URL}website/website/${userId}`);
       if (res.data?.website) {
         setMyWebsite(res.data.website);
       }
@@ -150,7 +141,7 @@ const GenerateScreen = ({ navigation }) => {
         'GenerateScreen fetchMyWebsite error',
         err?.response?.data || err.message,
       );
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
@@ -211,14 +202,21 @@ const GenerateScreen = ({ navigation }) => {
   const pickImage = async () => {
     const hasPermission = await requestPhotoPermission();
     if (!hasPermission) {
-      alert('Permission required to select an image.');
+      Alert.alert(
+        'Need photo access',
+        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
+      );
       return;
     }
 
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        alert(response.errorMessage || 'Image picker error');
+        Alert.alert(
+          'Photo trouble',
+          response.errorMessage ||
+            "I couldn't grab that photo — mind trying again?",
+        );
         return;
       }
       if (response.assets && response.assets.length > 0) {
@@ -230,14 +228,21 @@ const GenerateScreen = ({ navigation }) => {
   const pickHeroImage = async () => {
     const hasPermission = await requestPhotoPermission();
     if (!hasPermission) {
-      alert('Permission required to select an image.');
+      Alert.alert(
+        'Need photo access',
+        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
+      );
       return;
     }
 
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        alert(response.errorMessage || 'Image picker error');
+        Alert.alert(
+          'Photo trouble',
+          response.errorMessage ||
+            "I couldn't grab that photo — mind trying again?",
+        );
         return;
       }
       if (response.assets && response.assets.length > 0) {
@@ -249,14 +254,21 @@ const GenerateScreen = ({ navigation }) => {
   const pickServicesImage = async () => {
     const hasPermission = await requestPhotoPermission();
     if (!hasPermission) {
-      alert('Permission required to select an image.');
+      Alert.alert(
+        'Need photo access',
+        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
+      );
       return;
     }
 
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        alert(response.errorMessage || 'Image picker error');
+        Alert.alert(
+          'Photo trouble',
+          response.errorMessage ||
+            "I couldn't grab that photo — mind trying again?",
+        );
         return;
       }
       if (response.assets && response.assets.length > 0) {
@@ -268,14 +280,21 @@ const GenerateScreen = ({ navigation }) => {
   const pickAboutImage = async () => {
     const hasPermission = await requestPhotoPermission();
     if (!hasPermission) {
-      alert('Permission required to select an image.');
+      Alert.alert(
+        'Need photo access',
+        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
+      );
       return;
     }
 
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        alert(response.errorMessage || 'Image picker error');
+        Alert.alert(
+          'Photo trouble',
+          response.errorMessage ||
+            "I couldn't grab that photo — mind trying again?",
+        );
         return;
       }
       if (response.assets && response.assets.length > 0) {
@@ -321,10 +340,14 @@ const GenerateScreen = ({ navigation }) => {
   const pickServiceItemImage = async index => {
     if (!(await requestPhotoPermission())) return;
 
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        alert(response.errorMessage || 'Image picker error');
+        Alert.alert(
+          'Photo trouble',
+          response.errorMessage ||
+            "I couldn't grab that photo — mind trying again?",
+        );
         return;
       }
       if (response.assets && response.assets.length > 0) {
@@ -409,7 +432,7 @@ const GenerateScreen = ({ navigation }) => {
     } catch (e) {
       console.log('Error:', e.message);
       console.log('Response:', e.response?.data);
-      Alert.alert('Error', getFriendlyErrorMessage(e));
+      Alert.alert('Oops!', getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -422,7 +445,10 @@ const GenerateScreen = ({ navigation }) => {
       const token = await AsyncStorage.getItem('accessToken');
 
       if (!userId) {
-        alert('Please log in before saving your website.');
+        Alert.alert(
+          'Please sign in first',
+          "I need you to be logged in before I can save your website.",
+        );
         return;
       }
 
@@ -433,7 +459,7 @@ const GenerateScreen = ({ navigation }) => {
         : '';
 
       const res = await axios.post(
-        `${BASE_URL}/api/website/save-website`,
+        `${BASE_URL}website/save-website`,
         {
           userId,
           userName,
@@ -502,7 +528,7 @@ const GenerateScreen = ({ navigation }) => {
       }
     } catch (err) {
       console.log('Save error:', err.response?.data || err.message || err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     }
   };
 
@@ -1090,7 +1116,7 @@ const GenerateScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   background: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#f0f4f9',
   },
   backgroundImage: {

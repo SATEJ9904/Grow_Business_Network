@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Image,
   ScrollView,
@@ -11,17 +10,20 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { BASE_URL } from '@env';
-import React, { useEffect, useRef, useState } from 'react';
+import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   useGuardedAction,
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import { fetchUnseenCount } from '../utils/notificationsApi';
 
 const DashboardScreen = ({ navigation }) => {
   const [chapters, setChapters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unseenMeetingCount, setUnseenMeetingCount] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -43,21 +45,22 @@ const DashboardScreen = ({ navigation }) => {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
+  const getUnseenMeetingCount = async () => {
+    try {
+      setUnseenMeetingCount(await fetchUnseenCount());
+    } catch (error) {
+      console.log('Unseen meeting count error:', error);
+    }
+  };
 
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  // Re-check whenever the Dashboard regains focus (e.g. navigating back
+  // from NotificationsScreen after it marks everything seen) so the badge
+  // clears without needing a full remount.
+  useFocusEffect(
+    useCallback(() => {
+      getUnseenMeetingCount();
+    }, []),
+  );
 
   const getChapters = async () => {
     setLoading(true);
@@ -97,7 +100,7 @@ const DashboardScreen = ({ navigation }) => {
     } catch (error) {
       console.log('Chapter Error:', error);
       setChapters([]);
-      Alert.alert('Error', getFriendlyErrorMessage(error));
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -113,15 +116,43 @@ const DashboardScreen = ({ navigation }) => {
     navigation.navigate('SelectChapterScreen'),
   );
 
+  const guardedGoToMeetings = useGuardedAction(() =>
+    navigation.navigate('MeetingsScreen'),
+  );
+
+  const guardedGoToNotifications = useGuardedAction(() =>
+    navigation.navigate('NotificationsScreen'),
+  );
+
   const features = [
-    'Meeting Flyer',
-    'Dashboard Promotion',
-    'Business Meetings',
-    'Networking Events',
+    {
+      icon: '📰',
+      title: 'Meeting Flyer',
+      description: 'Event flyers land straight on your dashboard',
+      color: '#17310F',
+    },
+    {
+      icon: '📢',
+      title: 'Dashboard Promotion',
+      description: 'Get your business featured to the network',
+      color: '#FF6B00',
+    },
+    {
+      icon: '🤝',
+      title: 'Business Meetings',
+      description: 'Join curated meetings hosted by your chapter',
+      color: '#0B6E4F',
+    },
+    {
+      icon: '🎉',
+      title: 'Networking Events',
+      description: 'Connect at exclusive member-only events',
+      color: '#041109',
+    },
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#17310F" barStyle="light-content" />
 
       <ScrollView
@@ -224,6 +255,35 @@ const DashboardScreen = ({ navigation }) => {
 
   </View> */}
         </Animated.View>
+
+        {/* MEETINGS QUICK ACTIONS */}
+        <View style={styles.meetingsActionRow}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.meetingsActionCard}
+            onPress={guardedGoToMeetings}
+          >
+            <Text style={styles.meetingsActionIcon}>📅</Text>
+            <Text style={styles.meetingsActionText}>Meetings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.meetingsActionCard}
+            onPress={guardedGoToNotifications}
+          >
+            <Text style={styles.meetingsActionIcon}>🔔</Text>
+            <Text style={styles.meetingsActionText}>Notifications</Text>
+            {unseenMeetingCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unseenMeetingCount > 9 ? '9+' : unseenMeetingCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Leadership Team</Text>
 
@@ -304,21 +364,30 @@ const DashboardScreen = ({ navigation }) => {
 
           <View style={styles.line} />
 
-          <View style={styles.featureContainer}>
-            {features.map((item, index) => (
+          <View style={styles.featureList}>
+            {features.map(item => (
               <Animated.View
-                key={index}
+                key={item.title}
                 style={[
-                  styles.featureCard,
+                  styles.featureRow,
                   {
                     opacity: fadeAnim,
                     transform: [{ translateY: slideAnim }],
                   },
                 ]}
               >
-                <View style={styles.dot} />
+                <View style={[styles.featureAccentBar, { backgroundColor: item.color }]} />
 
-                <Text style={styles.featureText}>{item}</Text>
+                <View style={[styles.featureIconCircle, { backgroundColor: item.color }]}>
+                  <Text style={styles.featureIconGlyph}>{item.icon}</Text>
+                </View>
+
+                <View style={styles.featureRowContent}>
+                  <Text style={styles.featureRowTitle}>{item.title}</Text>
+                  <Text style={styles.featureRowDescription}>{item.description}</Text>
+                </View>
+
+                <Text style={styles.featureChevron}>›</Text>
               </Animated.View>
             ))}
           </View>
@@ -408,7 +477,7 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -416,8 +485,61 @@ export default DashboardScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#F3F5F4',
+  },
+
+  meetingsActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    marginTop: 18,
+  },
+
+  meetingsActionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 18,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EEF2EF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+    position: 'relative',
+  },
+
+  meetingsActionIcon: {
+    fontSize: 24,
+    marginBottom: 6,
+  },
+
+  meetingsActionText: {
+    color: '#17310F',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  notificationBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 18,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF6B00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
 
   header: {
@@ -450,13 +572,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-  },
-
-  logo: {
-    width: 88,
-    height: 88,
-    resizeMode: 'contain',
-    borderRadius: 20,
   },
 
   title: {
@@ -620,35 +735,70 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  featureContainer: {
+  featureList: {
+    gap: 12,
+  },
+
+  featureRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingRight: 14,
+    marginBottom: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
-  featureCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    paddingVertical: 24,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-    elevation: 4,
+  featureAccentBar: {
+    width: 5,
+    alignSelf: 'stretch',
+    marginRight: 14,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
 
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 10,
-    backgroundColor: '#FF6B00',
-    marginBottom: 14,
+  featureIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
 
-  featureText: {
+  featureIconGlyph: {
+    fontSize: 22,
+  },
+
+  featureRowContent: {
+    flex: 1,
+  },
+
+  featureRowTitle: {
     color: '#111827',
-    fontWeight: '600',
+    fontWeight: '800',
     fontSize: 15,
-    lineHeight: 22,
+  },
+
+  featureRowDescription: {
+    marginTop: 4,
+    color: '#6B7280',
+    fontWeight: '500',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
+  featureChevron: {
+    color: '#D1D5DB',
+    fontSize: 26,
+    fontWeight: '700',
+    marginLeft: 6,
   },
 
   chapterCard: {
@@ -763,10 +913,5 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 14,
     fontWeight: '600',
-  },
-
-  chapterScrollContent: {
-    paddingRight: 18,
-    paddingVertical: 8,
   },
 });

@@ -21,6 +21,8 @@ const storage = multer.diskStorage({
       uploadDir += "profiles/";
     } else if (file.fieldname === "coverImage") {
       uploadDir += "covers/";
+    } else if (file.fieldname === "flyerImage") {
+      uploadDir += "flyers/";
     }
 
     cb(null, uploadDir);

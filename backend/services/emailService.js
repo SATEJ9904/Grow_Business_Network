@@ -455,6 +455,73 @@ const sendInvoiceEmail = async (email, memberName, invoice, pdfBuffer) => {
   });
 };
 
+/**
+ * Send Meeting Seat Booking Confirmation Email
+ * @param {string} email - Recipient email
+ * @param {string} memberName - Member name
+ * @param {Object} meeting - Meeting document
+ * @param {Object} booking - MeetingBooking document
+ * @returns {Promise<Object>} Email send response
+ */
+const sendMeetingBookingConfirmationEmail = async (email, memberName, meeting, booking) => {
+  const subject = `Seat Confirmed: ${meeting.name}`;
+
+  const meetingDateLabel = new Date(meeting.meetingDateTime).toLocaleString("en-IN", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .success-message { background-color: #d4edda; padding: 15px; border-radius: 5px; color: #155724; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .details-box { background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+          .details-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e0e0e0; }
+          .details-row:last-child { border-bottom: none; }
+          .details-label { color: #555; }
+          .details-value { color: #111; font-weight: 600; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Your Seat is Booked</h2>
+          </div>
+          <div class="success-message">
+            <strong>Payment received — your seat for "${meeting.name}" is confirmed!</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Thank you for booking your seat. Here are your meeting and payment details:</p>
+          <div class="details-box">
+            <div class="details-row"><span class="details-label">Meeting</span><span class="details-value">${meeting.name}</span></div>
+            <div class="details-row"><span class="details-label">Date &amp; Time</span><span class="details-value">${meetingDateLabel}</span></div>
+            <div class="details-row"><span class="details-label">Venue</span><span class="details-value">${meeting.venue}</span></div>
+            <div class="details-row"><span class="details-label">Amount Paid</span><span class="details-value">₹${booking.totalAmount}</span></div>
+            <div class="details-row"><span class="details-label">Transaction ID</span><span class="details-value">${booking.razorpayPaymentId}</span></div>
+          </div>
+          <p class="message">We look forward to seeing you there!</p>
+          <div class="footer">
+            <p>&copy; 2024 Networking Club. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject,
+    html: htmlContent,
+  });
+};
+
 module.exports = {
   sendOTPEmail,
   sendApprovalEmail,
@@ -464,4 +531,5 @@ module.exports = {
   sendNewMemberJoinedEmail,
   sendMemberProfileUpdatedEmail,
   sendInvoiceEmail,
+  sendMeetingBookingConfirmationEmail,
 };

@@ -8,6 +8,13 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+# Building React Native Core from source avoids duplicate RCTSwiftUI class
+# definitions between the prebuilt React-Core-prebuilt framework and the
+# source-compiled RCTSwiftUI/RCTSwiftUIWrapper pods, which corrupts UIKit's
+# view hierarchy state and crashes the app on launch (stack overflow in
+# _recursiveEagerlyUpdateSafeAreaInsetsUntilViewController).
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green

@@ -5,10 +5,13 @@
 
 require("dotenv").config();
 
+const http = require("http");
 const app = require("./app");
 const { connectDatabase } = require("./config/db");
+const { initSocket } = require("./utils/socket");
 const cron = require("node-cron");
 const { cleanupExpiredOTPs } = require("./services/otpService");
+const { dispatchDueNotifications } = require("./services/notificationDispatchService");
 const os = require("os");
 
 // Function to get local IP address
@@ -38,11 +41,15 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDatabase();
 
-    server = app.listen(PORT, "0.0.0.0", () => {
+    const httpServer = http.createServer(app);
+    initSocket(httpServer);
+
+    server = httpServer.listen(PORT, "0.0.0.0", () => {
       console.log(`\n${"=".repeat(50)}`);
       console.log(`✅ Server is running on port ${PORT}`);
       console.log(`📝 Environment: ${NODE_ENV}`);
       console.log(`🌐 API Base URL: http://${getLocalIP()}:${PORT}`);
+      console.log(`🔌 Socket.IO ready`);
       console.log(`${"=".repeat(50)}\n`);
     });
 
@@ -59,6 +66,20 @@ const startServer = async () => {
     });
 
     console.log("✅ OTP cleanup cron job scheduled (every 10 minutes)");
+
+    /**
+     * Setup cron job to send due scheduled notifications
+     * Runs every minute
+     */
+    cron.schedule("* * * * *", async () => {
+      try {
+        await dispatchDueNotifications();
+      } catch (error) {
+        console.error("❌ Notification dispatch cron job error:", error.message);
+      }
+    });
+
+    console.log("✅ Notification dispatch cron job scheduled (every minute)");
 
     return server;
   } catch (error) {

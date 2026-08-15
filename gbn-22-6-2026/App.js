@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { Linking } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import SplashScreen from './Components/Screens/SplashScreen';
 import LoginScreen from './Components/Screens/LoginScreen';
@@ -22,11 +23,16 @@ import EditProfileScreen from './Components/Screens/EditProfileScreen';
 import ProfileScreen from './Components/Screens/ProfileScreen';
 import MembersScreen from './Components/Screens/MembersScreen';
 import VerifyResetOTPScreen from './Components/Screens/VerifyResetOTPScreen';
-
+import MeetingsScreen from './Components/Screens/MeetingsScreen';
+import NotificationsScreen from './Components/Screens/NotificationsScreen';
+import ErrorBoundary from './Components/ErrorBoundary';
+import PrivacyScreen from './Components/PrivacyScreen';
+import MeetingPopup from './Components/MeetingPopup';
+import NotificationBell from './Components/NotificationBell';
+import { navigationRef } from './Components/utils/navigationRef';
+import './Components/utils/authInterceptor';
 
 const Stack = createNativeStackNavigator();
-
-const navigationRef = React.createRef();
 
 const EXPIRY_TIME = 30 * 60 * 1000;
 const linking = {
@@ -39,6 +45,12 @@ const linking = {
 };
 
 export default function App() {
+  const [currentRoute, setCurrentRoute] = useState(null);
+
+  const syncCurrentRoute = () => {
+    setCurrentRoute(navigationRef.current?.getCurrentRoute()?.name ?? null);
+  };
+
   useEffect(() => {
     Linking.getInitialURL().then(url => {
       console.log('INITIAL URL =', url);
@@ -82,48 +94,71 @@ export default function App() {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
-      <NavigationContainer linking={linking} ref={navigationRef}>
-        <Stack.Navigator
-          initialRouteName="Splash"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Splash" component={SplashScreen} />
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <View style={{ flex: 1 }}>
+          <NavigationContainer
+            linking={linking}
+            ref={navigationRef}
+            onReady={syncCurrentRoute}
+            onStateChange={syncCurrentRoute}
+          >
+            <Stack.Navigator
+              initialRouteName="Splash"
+              screenOptions={{ headerShown: false }}
+            >
+              <Stack.Screen name="Splash" component={SplashScreen} />
 
-          <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
 
-          <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
 
-          <Stack.Screen name="Generate" component={GenerateScreen} />
+              <Stack.Screen name="Generate" component={GenerateScreen} />
 
-          <Stack.Screen name="Preview" component={PreviewScreen} />
+              <Stack.Screen name="Preview" component={PreviewScreen} />
 
-          <Stack.Screen name="Account" component={AccountScreen} />
+              <Stack.Screen name="Account" component={AccountScreen} />
 
-          <Stack.Screen name="Status" component={StatusScreen} />
+              <Stack.Screen name="Status" component={StatusScreen} />
 
-          <Stack.Screen name="AllProfiles" component={AllProfilesScreen} />
+              <Stack.Screen name="AllProfiles" component={AllProfilesScreen} />
 
-          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPasswordScreen}
+              />
 
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen
-            name="SelectChapterScreen"
-            component={SelectChapterScreen}
-          />
-          <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-          <Stack.Screen
-            name="EditProfileScreen"
-            component={EditProfileScreen}
-          />
-          <Stack.Screen
-            name="EditWebsiteScreen"
-            component={EditWebsiteScreen}
-          />
-          <Stack.Screen name="MembersScreen" component={MembersScreen} />
-          <Stack.Screen name="VerifyResetOTPScreen" component={VerifyResetOTPScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </View>
+              <Stack.Screen name="Dashboard" component={DashboardScreen} />
+              <Stack.Screen
+                name="SelectChapterScreen"
+                component={SelectChapterScreen}
+              />
+              <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+              <Stack.Screen
+                name="EditProfileScreen"
+                component={EditProfileScreen}
+              />
+              <Stack.Screen
+                name="EditWebsiteScreen"
+                component={EditWebsiteScreen}
+              />
+              <Stack.Screen name="MembersScreen" component={MembersScreen} />
+              <Stack.Screen
+                name="VerifyResetOTPScreen"
+                component={VerifyResetOTPScreen}
+              />
+              <Stack.Screen name="MeetingsScreen" component={MeetingsScreen} />
+              <Stack.Screen
+                name="NotificationsScreen"
+                component={NotificationsScreen}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+          <PrivacyScreen />
+          <MeetingPopup currentRoute={currentRoute} />
+          <NotificationBell currentRoute={currentRoute} />
+        </View>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

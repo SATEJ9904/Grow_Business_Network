@@ -8,11 +8,11 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { BASE_URL } from '@env';
+import { API_BASE_URL } from '../utils/apiConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
 
-const API_URL = BASE_URL;
+const API_URL = API_BASE_URL;
 const { width } = Dimensions.get('window');
 const scale = size => (width / 375) * size;
 
@@ -30,17 +30,17 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
   const handleReset = async () => {
     if (!password || !confirmPassword) {
-      Alert.alert('Error', 'Please enter all fields');
+      Alert.alert('Oops!', 'Please enter all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Oops!', 'Passwords do not match');
       return;
     }
 
     if (!email) {
-      Alert.alert('Error', 'Invalid email');
+      Alert.alert('Oops!', 'Invalid email');
       return;
     }
 
@@ -72,11 +72,11 @@ export default function ResetPasswordScreen({ route, navigation }) {
         }, 2000);
       } else {
         console.log('❌ Reset failed:', data.message);
-        Alert.alert('Error', data.message || 'Failed to reset password');
+        Alert.alert('Oops!', data.message || 'Failed to reset password');
       }
     } catch (err) {
       console.log('🚨 Reset Error:', err);
-      Alert.alert('Error', getFriendlyErrorMessage(err));
+      Alert.alert('Oops!', getFriendlyErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +178,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     backgroundColor: '#f7fafc',
     padding: scale(20),
