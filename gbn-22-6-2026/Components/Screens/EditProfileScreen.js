@@ -26,6 +26,7 @@ import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
+import * as biometricAuth from '../utils/biometricAuth';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -519,6 +520,12 @@ const EditProfileScreen = () => {
                       'Profile Deleted',
                       'Your profile deletion request has been submitted successfully.',
                     );
+
+                    // Account is gone — also drop its biometric credential.
+                    // AsyncStorage.clear() below never touches Keychain, so
+                    // without this the refresh token would linger there
+                    // forever.
+                    await biometricAuth.purgeAccount(userId);
 
                     await AsyncStorage.clear();
 

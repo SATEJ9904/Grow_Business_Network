@@ -25,11 +25,13 @@ import MembersScreen from './Components/Screens/MembersScreen';
 import VerifyResetOTPScreen from './Components/Screens/VerifyResetOTPScreen';
 import MeetingsScreen from './Components/Screens/MeetingsScreen';
 import NotificationsScreen from './Components/Screens/NotificationsScreen';
+import SecuritySettingsScreen from './Components/Screens/SecuritySettingsScreen';
 import ErrorBoundary from './Components/ErrorBoundary';
 import PrivacyScreen from './Components/PrivacyScreen';
 import MeetingPopup from './Components/MeetingPopup';
 import NotificationBell from './Components/NotificationBell';
 import { navigationRef } from './Components/utils/navigationRef';
+import { clearSession } from './Components/utils/session';
 import './Components/utils/authInterceptor';
 
 const Stack = createNativeStackNavigator();
@@ -76,7 +78,10 @@ export default function App() {
               loginTime &&
               Date.now() - parseInt(loginTime, 10) > EXPIRY_TIME
             ) {
-              await AsyncStorage.clear();
+              // Same account may log back in later — preserve biometric
+              // config/counters, same as the other auto-expiry/logout
+              // paths (SplashScreen.js, authInterceptor.js).
+              await clearSession();
 
               navigationRef.current?.reset({
                 index: 0,
@@ -151,6 +156,10 @@ export default function App() {
               <Stack.Screen
                 name="NotificationsScreen"
                 component={NotificationsScreen}
+              />
+              <Stack.Screen
+                name="SecuritySettingsScreen"
+                component={SecuritySettingsScreen}
               />
             </Stack.Navigator>
           </NavigationContainer>

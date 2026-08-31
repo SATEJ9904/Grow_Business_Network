@@ -23,6 +23,7 @@ import PreviewScreen from './PreviewScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PYTHON_SERVICE_URL } from '@env';
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
+import * as biometricAuth from '../utils/biometricAuth';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -351,6 +352,11 @@ const AllProfilesScreen = () => {
 
               // ✅ CLEAR STATE
               setCurrentUser(null);
+
+              // Account is gone — also drop its biometric credential.
+              // AsyncStorage.clear() below never touches Keychain, so
+              // without this the refresh token would linger there forever.
+              await biometricAuth.purgeAccount(userId);
 
               // ✅ CLEAR STORAGE
               await AsyncStorage.clear();

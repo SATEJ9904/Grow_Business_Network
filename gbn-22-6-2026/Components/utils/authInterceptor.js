@@ -1,7 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from './apiConfig';
 import { navigationRef } from './navigationRef';
+import { refreshSession } from './authSession';
+import { clearSession } from './session';
 
 // Every screen in this app calls the default `axios` export directly (e.g.
 // `axios.get(...)`, `axios.put(...)`), so a single interceptor registered
@@ -17,28 +18,21 @@ let refreshPromise = null;
 
 async function refreshAccessToken() {
   const refreshToken = await AsyncStorage.getItem('refreshToken');
-  if (!refreshToken) return null;
+  const result = await refreshSession(refreshToken);
+  if (!result) return null;
 
-  // Plain axios (not the shared `axios` default whose interceptor we're
-  // inside) so this call can't recursively trigger the 401 handler below.
-  const response = await axios.create().post(
-    `${API_BASE_URL}auth/refresh-token`,
-    { refreshToken },
-  );
-
-  const newAccessToken = response.data?.data?.accessToken;
-  const newRefreshToken = response.data?.data?.refreshToken;
-  if (!newAccessToken) return null;
-
-  await AsyncStorage.setItem('accessToken', newAccessToken);
-  if (newRefreshToken) {
-    await AsyncStorage.setItem('refreshToken', newRefreshToken);
-  }
-  return newAccessToken;
+  await AsyncStorage.setItem('accessToken', result.accessToken);
+  await AsyncStorage.setItem('refreshToken', result.refreshToken);
+  return result.accessToken;
 }
 
 async function handleRefreshFailure() {
-  await AsyncStorage.clear();
+  // A dead refresh token just means this session ended — the same account
+  // may log back in later, so this preserves biometric config/counters
+  // exactly like the explicit-logout and idle-expiry paths do. It's not an
+  // account deletion, which is the only case that still uses a full
+  // AsyncStorage.clear().
+  await clearSession();
   navigationRef.current?.reset({
     index: 0,
     routes: [{ name: 'Login' }],

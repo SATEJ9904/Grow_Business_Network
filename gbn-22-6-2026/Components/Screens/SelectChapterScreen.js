@@ -24,6 +24,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import { clearSession } from '../utils/session';
 
 const { width, height } = Dimensions.get('window');
 
@@ -167,7 +168,9 @@ const SelectChapterScreen = ({ navigation }) => {
   };
 
   const logoutUser = async () => {
-    await AsyncStorage.clear();
+    // Preserves biometric config/counters for this account — see
+    // Components/utils/session.js and Components/utils/biometricAuth.js.
+    await clearSession();
 
     navigation.replace('Login');
   };
@@ -188,6 +191,11 @@ const SelectChapterScreen = ({ navigation }) => {
   const guardedGoWebsite = useGuardedAction(() => {
     closeSidebar();
     navigation.navigate('EditWebsiteScreen');
+  });
+
+  const guardedGoSecurity = useGuardedAction(() => {
+    closeSidebar();
+    navigation.navigate('SecuritySettingsScreen');
   });
 
   const renderChapter = ({ item }) => (
@@ -429,6 +437,24 @@ const SelectChapterScreen = ({ navigation }) => {
                 <Text style={styles.cardTitle}>Manage Website</Text>
 
                 <Text style={styles.cardSub}>Customize your website</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* SECURITY */}
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.sidebarCard}
+              onPress={guardedGoSecurity}
+            >
+              <View style={styles.iconBox}>
+                <Text style={styles.iconText}>🔐</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>Security</Text>
+
+                <Text style={styles.cardSub}>Biometric login settings</Text>
               </View>
             </TouchableOpacity>
 

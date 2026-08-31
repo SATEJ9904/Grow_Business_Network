@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,38 @@ import {
   StatusBar,
   Dimensions,
   Alert,
+  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../utils/apiConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
+import * as biometricAuth from '../utils/biometricAuth';
+import { refreshSession } from '../utils/authSession';
 
 const API_URL = API_BASE_URL;
 
 const { width, height } = Dimensions.get('window');
 
 const scale = size => (width / 375) * size;
+
+const BIOMETRIC_FAILURE_MESSAGES = {
+  lockout:
+    'Biometric authentication is temporarily unavailable. Please use your password.',
+  invalidated:
+    "Your biometric login needs to be set up again — you can do that from Security settings after you log in.",
+  unavailable:
+    'Biometric login is no longer available on this device. Please use your password.',
+  failed: 'Fingerprint not recognized. Try again.',
+};
+
+async function persistSession({ accessToken, refreshToken, user }) {
+  if (accessToken) await AsyncStorage.setItem('accessToken', accessToken);
+  if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
+  if (user?._id) await AsyncStorage.setItem('userId', user._id);
+  if (user) await AsyncStorage.setItem('userData', JSON.stringify(user));
+  await AsyncStorage.setItem('loginTime', Date.now().toString());
+}
 
 export default function LoginScreen({ navigation }) {
   const [identifier, setIdentifier] = useState('');
@@ -29,6 +50,41 @@ export default function LoginScreen({ navigation }) {
 
   const [loading, setLoading] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+
+  const [biometricState, setBiometricState] = useState({
+    available: false,
+    biometryType: null,
+    configuredUserId: null,
+  });
+  const [biometricBusy, setBiometricBusy] = useState(false);
+
+  const [setupPrompt, setSetupPrompt] = useState(null); // { userId, refreshToken } | null
+  const [settingUp, setSettingUp] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    biometricAuth.getLoginScreenBiometricState().then(state => {
+      if (!cancelled) setBiometricState(state);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fetchAndPersistProfile = async accessToken => {
+    const response = await fetch(`${API_URL}member/profile`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const json = await response.json();
+    const user = json?.data;
+    if (!user) throw new Error('Could not load your profile');
+    return user;
+  };
+
+  const finishLogin = async ({ accessToken, refreshToken, user }) => {
+    await persistSession({ accessToken, refreshToken, user });
+    navigation.replace('Dashboard');
+  };
 
   const handleLogin = async () => {
     if (!identifier.trim() || !password.trim()) {
@@ -95,31 +151,23 @@ export default function LoginScreen({ navigation }) {
         const accessToken = data?.data?.accessToken || data?.accessToken;
         const refreshToken = data?.data?.refreshToken || data?.refreshToken;
 
-        if (accessToken) {
-          await AsyncStorage.setItem('accessToken', accessToken);
+        const shouldOfferSetup =
+          user?._id &&
+          refreshToken &&
+          (await biometricAuth.recordPasswordLoginAndCheckPrompt(
+            user._id,
+            biometricState.available,
+          ));
+
+        if (shouldOfferSetup) {
+          // Hold navigation until the user answers the setup prompt —
+          // persist the session now so either choice can proceed safely.
+          await persistSession({ accessToken, refreshToken, user });
+          setSetupPrompt({ userId: user._id, refreshToken });
+          return;
         }
 
-        if (refreshToken) {
-          await AsyncStorage.setItem('refreshToken', refreshToken);
-        }
-
-        if (user?._id) {
-          await AsyncStorage.setItem('userId', user._id);
-        }
-
-        if (user) {
-          await AsyncStorage.setItem('userData', JSON.stringify(user));
-          console.log('✅ User Data Saved');
-        }
-
-        await AsyncStorage.setItem('loginTime', Date.now().toString());
-        console.log('✅ Login Time Saved');
-
-        console.log('📦 AsyncStorage Save Complete');
-
-        // Navigate immediately without alert for better UX
-        console.log('➡️ Navigating to AllProfiles');
-        navigation.replace('Dashboard');
+        await finishLogin({ accessToken, refreshToken, user });
       } else {
         console.log('❌ Login Failed:', data?.message);
         console.log('📝 Full Response:', data);
@@ -192,11 +240,100 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    const userId = biometricState.configuredUserId;
+    if (!userId || biometricBusy) return;
+
+    setBiometricBusy(true);
+    try {
+      const unlock = await biometricAuth.unlockWithBiometric(userId);
+
+      if (!unlock.ok) {
+        if (unlock.reason !== 'cancelled') {
+          Alert.alert(
+            'Biometric Login',
+            BIOMETRIC_FAILURE_MESSAGES[unlock.reason] ||
+              BIOMETRIC_FAILURE_MESSAGES.failed,
+          );
+        }
+        if (unlock.reason === 'invalidated' || unlock.reason === 'unavailable') {
+          setBiometricState(await biometricAuth.getLoginScreenBiometricState());
+        }
+        return;
+      }
+
+      const refreshed = await refreshSession(unlock.refreshToken);
+      if (!refreshed) {
+        // The stored refresh token was rejected server-side — it's stale
+        // (rotated/expired), not a generic network hiccup. Clear it so the
+        // app stops offering a dead button, same as an OS-level invalidation.
+        await biometricAuth.markInvalidated(userId);
+        setBiometricState(await biometricAuth.getLoginScreenBiometricState());
+        Alert.alert(
+          'Biometric Login',
+          'Your saved session has expired. Please log in with your password.',
+        );
+        return;
+      }
+
+      // Re-persist immediately — refresh tokens rotate, so skipping this
+      // breaks biometric login after exactly one use.
+      await biometricAuth.updateStoredRefreshToken(
+        userId,
+        refreshed.refreshToken,
+      );
+
+      const user = await fetchAndPersistProfile(refreshed.accessToken);
+      await finishLogin({
+        accessToken: refreshed.accessToken,
+        refreshToken: refreshed.refreshToken,
+        user,
+      });
+    } catch (error) {
+      Alert.alert('Oops!', getFriendlyErrorMessage(error));
+    } finally {
+      setBiometricBusy(false);
+    }
+  };
+
+  const handleSetUpBiometric = async () => {
+    if (!setupPrompt) return;
+    setSettingUp(true);
+    try {
+      const ok = await biometricAuth.enableBiometric(
+        setupPrompt.userId,
+        setupPrompt.refreshToken,
+      );
+      if (!ok) {
+        Alert.alert(
+          'Oops!',
+          'Could not set up biometric login right now. You can try again later from Security settings.',
+        );
+      }
+    } catch (error) {
+      console.log('Biometric setup error:', error);
+    } finally {
+      setSettingUp(false);
+      setSetupPrompt(null);
+      navigation.replace('Dashboard');
+    }
+  };
+
+  const handleDismissSetupPrompt = () => {
+    setSetupPrompt(null);
+    navigation.replace('Dashboard');
+  };
+
   const guardedForgotPassword = useGuardedAction(handleForgotPassword);
   const guardedLogin = useGuardedAction(handleLogin);
+  const guardedBiometricLogin = useGuardedAction(handleBiometricLogin);
   const guardedToggleSecure = useGuardedAction(() => setSecure(s => !s), 250);
   const guardedGoRegister = useGuardedAction(() =>
     navigation.navigate('Register'),
+  );
+
+  const biometryLabel = biometricAuth.biometryLabel(
+    biometricState.biometryType,
   );
 
   return (
@@ -275,6 +412,35 @@ export default function LoginScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
+        {biometricState.available && biometricState.configuredUserId && (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.biometricButton,
+                biometricBusy && styles.disabledButton,
+              ]}
+              onPress={guardedBiometricLogin}
+              disabled={biometricBusy}
+            >
+              <Icon
+                name="finger-print-outline"
+                size={20}
+                color="#0B3D2E"
+                style={styles.biometricIcon}
+              />
+              <Text style={styles.biometricButtonText}>
+                {biometricBusy ? 'Checking…' : `Log In with ${biometryLabel}`}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
         <View style={styles.registerRow}>
           <Text style={styles.accountText}>Don’t have an account? </Text>
           <TouchableOpacity onPress={guardedGoRegister}>
@@ -282,6 +448,45 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal
+        visible={!!setupPrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDismissSetupPrompt}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconBox}>
+              <Icon name="finger-print" size={28} color="#0B3D2E" />
+            </View>
+
+            <Text style={styles.modalTitle}>Login faster next time</Text>
+            <Text style={styles.modalBody}>
+              You can use your {biometryLabel.toLowerCase()} to securely log
+              in without entering your credentials again.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.button, settingUp && styles.disabledButton]}
+              onPress={handleSetUpBiometric}
+              disabled={settingUp}
+            >
+              <Text style={styles.buttonText}>
+                {settingUp ? 'Setting up…' : `Set Up ${biometryLabel}`}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalNotNow}
+              onPress={handleDismissSetupPrompt}
+              disabled={settingUp}
+            >
+              <Text style={styles.modalNotNowText}>Not Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 }
@@ -379,6 +584,47 @@ const styles = StyleSheet.create({
     fontSize: scale(15),
   },
 
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: scale(16),
+    marginBottom: scale(4),
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#eee',
+  },
+
+  dividerText: {
+    color: '#999',
+    fontSize: scale(12),
+    marginHorizontal: scale(10),
+  },
+
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F5F2',
+    borderWidth: 1,
+    borderColor: '#D9E5DE',
+    padding: scale(13),
+    borderRadius: scale(12),
+    marginTop: scale(12),
+  },
+
+  biometricIcon: {
+    marginRight: scale(8),
+  },
+
+  biometricButtonText: {
+    color: '#0B3D2E',
+    fontWeight: '700',
+    fontSize: scale(14),
+  },
+
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -399,5 +645,58 @@ const styles = StyleSheet.create({
   eyeIcon: {
     fontSize: scale(16),
     paddingHorizontal: scale(5),
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: scale(24),
+  },
+
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: scale(22),
+    padding: scale(22),
+    alignItems: 'center',
+  },
+
+  modalIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#F0F5F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: scale(14),
+  },
+
+  modalTitle: {
+    fontSize: scale(18),
+    fontWeight: '800',
+    color: '#0B3D2E',
+    textAlign: 'center',
+  },
+
+  modalBody: {
+    marginTop: scale(8),
+    marginBottom: scale(18),
+    fontSize: scale(13),
+    lineHeight: scale(20),
+    color: '#666',
+    textAlign: 'center',
+  },
+
+  modalNotNow: {
+    marginTop: scale(10),
+    padding: scale(8),
+  },
+
+  modalNotNowText: {
+    color: '#888',
+    fontWeight: '600',
+    fontSize: scale(13),
   },
 });

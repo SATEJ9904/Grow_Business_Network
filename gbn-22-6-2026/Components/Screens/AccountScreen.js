@@ -19,6 +19,7 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import PreviewScreen from './PreviewScreen';
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
+import * as biometricAuth from '../utils/biometricAuth';
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -427,6 +428,10 @@ const AccountScreen = () => {
                   headers: { Authorization: `Bearer ${token}` },
                 },
               );
+              // Account is gone — also drop its biometric credential.
+              // AsyncStorage.clear() below never touches Keychain, so
+              // without this the refresh token would linger there forever.
+              await biometricAuth.purgeAccount(userId);
               await AsyncStorage.clear();
               navigation.replace('Login');
             } catch (err) {
