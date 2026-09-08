@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { Linking } from 'react-native';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -32,13 +32,13 @@ import MeetingPopup from './Components/MeetingPopup';
 import NotificationBell from './Components/NotificationBell';
 import { navigationRef } from './Components/utils/navigationRef';
 import { clearSession } from './Components/utils/session';
+import { isPaymentInFlight } from './Components/utils/paymentGuard';
 import './Components/utils/authInterceptor';
 
 const Stack = createNativeStackNavigator();
 
-const EXPIRY_TIME = 30 * 60 * 1000;
 const linking = {
-  prefixes: ['gbn://'],
+  prefixes: ['gbn://', 'https://api.gbnsocialassociations.in'],
   config: {
     screens: {
       ResetPassword: 'reset-password',
@@ -66,34 +66,36 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener(
-      'change',
-      async nextState => {
-        // ⏰ Auto logout after expiry
-        if (nextState === 'active') {
-          try {
-            const loginTime = await AsyncStorage.getItem('loginTime');
-
-            if (
-              loginTime &&
-              Date.now() - parseInt(loginTime, 10) > EXPIRY_TIME
-            ) {
-              // Same account may log back in later — preserve biometric
-              // config/counters, same as the other auto-expiry/logout
-              // paths (SplashScreen.js, authInterceptor.js).
-              await clearSession();
-
-              navigationRef.current?.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            }
-          } catch (err) {
-            console.log('App resume expiry check failed:', err);
-          }
+    const subscription = AppState.addEventListener('change', async nextState => {
+      // Backgrounding (Home button, task switch, or the precursor to the
+      // user swiping the app away) logs the session out immediately, so
+      // reopening the app always requires a fresh login. The one exception
+      // is an in-flight Razorpay payment, which backgrounds the app itself
+      // to hand off to a UPI app/browser — see paymentGuard.js.
+      if (nextState === 'background') {
+        try {
+          if (await isPaymentInFlight()) return;
+          await clearSession();
+        } catch (err) {
+          console.log('Background logout failed:', err);
         }
-      },
-    );
+        return;
+      }
+
+      if (nextState === 'active') {
+        try {
+          const accessToken = await AsyncStorage.getItem('accessToken');
+          if (!accessToken) {
+            navigationRef.current?.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          }
+        } catch (err) {
+          console.log('Resume auth check failed:', err);
+        }
+      }
+    });
 
     return () => subscription.remove();
   }, []);

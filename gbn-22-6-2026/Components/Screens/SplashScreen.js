@@ -11,9 +11,6 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDelayedNotice } from '../utils/guards';
-import { clearSession } from '../utils/session';
-
-const EXPIRY_TIME = 30 * 60 * 1000; // 30 minutes
 
 const BG = '#0B3D2E';
 const ORANGE = '#F07E1D';
@@ -79,24 +76,17 @@ export default function SplashScreen({ navigation, route }) {
     const checkLogin = async () => {
       try {
         const user = await AsyncStorage.getItem('userData');
-        const loginTime = await AsyncStorage.getItem('loginTime');
+        const accessToken = await AsyncStorage.getItem('accessToken');
 
-        if (
-          user &&
-          loginTime &&
-          Date.now() - parseInt(loginTime, 10) < EXPIRY_TIME
-        ) {
-          console.log('✅ Session valid - auto-login');
+        // Stay logged in until explicit logout or a dead refresh token —
+        // both handled by the axios 401 interceptor (authInterceptor.js),
+        // which refreshes the access token transparently on the first API
+        // call and only then falls back to Login if the refresh token
+        // itself is invalid.
+        if (user && accessToken) {
+          console.log('✅ Session found - auto-login');
           navigation.replace('Dashboard');
           return;
-        }
-
-        if (loginTime) {
-          console.log('⚠️ Session expired, clearing storage');
-          // Preserves biometric config/counters for this account — see
-          // Components/utils/session.js and
-          // Components/utils/biometricAuth.js.
-          await clearSession();
         }
 
         navigation.replace('Login');

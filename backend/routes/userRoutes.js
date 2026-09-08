@@ -8,7 +8,9 @@ router.get("/:userId", async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
 
-    if (!user) {
+    // Demo accounts stay invisible to lookups by other users — reported as
+    // not found, same as a nonexistent id, so their existence isn't leaked.
+    if (!user || user.role === "demo") {
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -33,6 +35,9 @@ router.get("/chapter/:chapterId", async (req, res) => {
     const users = await User.find({
       chapterId: req.params.chapterId,
       status: "approved",
+      // Demo accounts can log in and use the app, but their business card
+      // stays out of the member directory.
+      role: { $in: ["member", "admin"] },
     });
 
     res.json({

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RazorpayCheckout from 'react-native-razorpay';
 import { API_BASE_URL as BASE_URL, getAssetUrl } from './utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from './utils/guards';
+import { markPaymentInFlight, clearPaymentInFlight } from './utils/paymentGuard';
 import CountdownTimer from './CountdownTimer';
 
 /**
@@ -104,6 +105,7 @@ const MeetingCard = ({ meeting, onBooked, showNewBadge, collapsible = false }) =
         theme: { color: '#17310F' },
       };
 
+      await markPaymentInFlight();
       RazorpayCheckout.open(options)
         .then(async paymentData => {
           try {
@@ -148,6 +150,9 @@ const MeetingCard = ({ meeting, onBooked, showNewBadge, collapsible = false }) =
               error?.description || 'Payment could not be completed. Please try again.',
             );
           }
+        })
+        .finally(() => {
+          clearPaymentInFlight();
         });
     } catch (error) {
       Alert.alert('Oops!', getFriendlyErrorMessage(error, 'Network error while starting payment.'));

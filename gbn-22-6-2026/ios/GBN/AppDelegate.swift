@@ -29,48 +29,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
-    #if !targetEnvironment(simulator)
-    if let window = window {
-      AppDelegate.preventScreenCapture(of: window)
-    }
-    #endif
-
     return true
   }
 
-  // iOS has no API to block screenshots/recording outright. The standard
-  // workaround (used by banking apps) is to reparent the window's layer
-  // under a secure-text-entry layer: iOS excludes secure layers from
-  // screenshots, the app switcher snapshot, and screen recordings, so any
-  // capture of the app shows a blank view instead of real content.
-  //
-  // This relies on window.layer already being hosted by the window server
-  // (i.e. having a superlayer) so the reparenting below detaches
-  // secureField's layer from window.layer first. On the Simulator that
-  // precondition doesn't hold the same way it does on device, so the final
-  // addSublayer(window.layer) below creates a cycle in the layer tree
-  // (window -> secureLayer -> secureField -> window), sending UIKit's
-  // safe-area pass into infinite recursion and crashing the app on launch.
-  // Only run this on real devices; callers must gate with
-  // #if !targetEnvironment(simulator).
-  private static func preventScreenCapture(of window: UIWindow) {
-    guard let windowSuperlayer = window.layer.superlayer else { return }
-
-    let secureField = UITextField()
-    secureField.isSecureTextEntry = true
-    secureField.isUserInteractionEnabled = false
-    secureField.borderStyle = .none
-
-    window.addSubview(secureField)
-    secureField.translatesAutoresizingMaskIntoConstraints = false
-    NSLayoutConstraint.activate([
-      secureField.centerXAnchor.constraint(equalTo: window.centerXAnchor),
-      secureField.centerYAnchor.constraint(equalTo: window.centerYAnchor),
-    ])
-    windowSuperlayer.addSublayer(secureField.layer)
-
-    guard let secureLayer = secureField.layer.sublayers?.first else { return }
-    secureLayer.addSublayer(window.layer)
+  // Without this, iOS launches the app for a gbn:// link (Info.plist
+  // registers the scheme) but never hands the URL to React Native, so
+  // Linking.getInitialURL()/the 'url' event never fire and the email
+  // buttons ("Log In Now", "Open GBN App", reset-password links) land on
+  // a blank launch instead of the screen they're supposed to open.
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    return RCTLinkingManager.application(app, open: url, options: options)
   }
 }
 

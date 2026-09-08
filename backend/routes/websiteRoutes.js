@@ -357,6 +357,8 @@ router.post(
 
         theme: req.body.theme || "Modern",
 
+        colorMode: req.body.colorMode === "dark" ? "dark" : "light",
+
         layoutId: req.body.layoutId || "modern-layout",
 
         layoutName: req.body.layoutName || "Modern Layout",

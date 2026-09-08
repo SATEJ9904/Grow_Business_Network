@@ -29,6 +29,7 @@
 			<string>com.growbusinessnetwork.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>gbn</string>
 				<string>growbusinessnetwork</string>
 			</array>
 		</dict>
@@ -46,8 +47,8 @@
 	</dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>GBN uses Face ID to let you log in quickly and securely without entering your password.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GBN needs access to your photo library so you can select and upload profile pictures, business images, and other content to your account.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

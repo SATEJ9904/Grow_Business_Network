@@ -11,6 +11,27 @@ const { verifyPaymentSignature } = require("../utils/razorpaySignature");
 const { getFeeBreakdown } = require("../config/fees");
 
 /**
+ * Read-only registration fee, computed from REGISTRATION_FEE_PAISE the same
+ * way createOrder does - lets the client (RegisterScreen's fee display)
+ * show the member the exact amount that will actually be charged, instead
+ * of a duplicated local constant that can silently drift out of sync with
+ * this env var.
+ * GET /api/payment/registration-fee
+ */
+const getRegistrationFee = (req, res) => {
+  const feeBreakdown = getFeeBreakdown();
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      totalAmount: feeBreakdown.totalAmount,
+      totalPaise: feeBreakdown.totalPaise,
+      currency: feeBreakdown.currency,
+    },
+  });
+};
+
+/**
  * Create a Razorpay order for the registration fee. The amount is computed
  * entirely server-side (getFeeBreakdown) so it cannot be tampered with by
  * the client.
@@ -98,6 +119,7 @@ const verifyPayment = async (req, res) => {
 };
 
 module.exports = {
+  getRegistrationFee,
   createOrder,
   verifyPayment,
 };

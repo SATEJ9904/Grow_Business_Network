@@ -451,6 +451,12 @@ const generateWebsiteHtml = (data, apiBaseUrl = "") => {
 
   html = html.replace(/{{theme}}/g, (data.theme || "Modern").toLowerCase());
 
+  // Default light/dark appearance on first load (visitor can still toggle).
+  html = html.replace(
+    /{{colorMode}}/g,
+    data.colorMode === "dark" ? "dark" : "light",
+  );
+
   html = html.replace(/{{footerInfo}}/g, data.footerInfo || "");
 
   html = html.replace(/{{primaryColor}}/g, data.primaryColor || "#7c5cff");

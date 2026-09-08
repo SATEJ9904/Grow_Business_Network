@@ -430,23 +430,27 @@ const approveMember = async (req, res, next) => {
       // Don't fail the request if email fails to send
     }
 
-    // Notify all other approved members that a new member has joined
-    // Fire-and-forget: don't make the admin wait on the whole membership's emails
-    userService
-      .getOtherApprovedMembers(user._id)
-      .then((otherMembers) =>
-        Promise.allSettled(
-          otherMembers.map((member) =>
-            sendNewMemberJoinedEmail(member.email, member.name, {
-              name: user.name,
-              companyName: user.companyName,
-            }),
+    // Notify all other approved members that a new member has joined.
+    // Demo accounts never get announced — they shouldn't be visible to
+    // other members at all. Fire-and-forget: don't make the admin wait on
+    // the whole membership's emails.
+    if (user.role !== "demo") {
+      userService
+        .getOtherApprovedMembers(user._id)
+        .then((otherMembers) =>
+          Promise.allSettled(
+            otherMembers.map((member) =>
+              sendNewMemberJoinedEmail(member.email, member.name, {
+                name: user.name,
+                companyName: user.companyName,
+              }),
+            ),
           ),
-        ),
-      )
-      .catch((broadcastError) => {
-        console.error("New member broadcast email error:", broadcastError.message);
-      });
+        )
+        .catch((broadcastError) => {
+          console.error("New member broadcast email error:", broadcastError.message);
+        });
+    }
 
     // Log activity
     const admin = await User.findById(adminId);
@@ -715,23 +719,27 @@ const createMember = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     });
 
-    // Notify all other approved members that a new member has joined
-    // Fire-and-forget: don't make the admin wait on the whole membership's emails
-    userService
-      .getOtherApprovedMembers(newUser._id)
-      .then((otherMembers) =>
-        Promise.allSettled(
-          otherMembers.map((member) =>
-            sendNewMemberJoinedEmail(member.email, member.name, {
-              name: newUser.name,
-              companyName: newUser.companyName,
-            }),
+    // Notify all other approved members that a new member has joined.
+    // Demo accounts never get announced — they shouldn't be visible to
+    // other members at all. Fire-and-forget: don't make the admin wait on
+    // the whole membership's emails.
+    if (newUser.role !== "demo") {
+      userService
+        .getOtherApprovedMembers(newUser._id)
+        .then((otherMembers) =>
+          Promise.allSettled(
+            otherMembers.map((member) =>
+              sendNewMemberJoinedEmail(member.email, member.name, {
+                name: newUser.name,
+                companyName: newUser.companyName,
+              }),
+            ),
           ),
-        ),
-      )
-      .catch((broadcastError) => {
-        console.error("New member broadcast email error:", broadcastError.message);
-      });
+        )
+        .catch((broadcastError) => {
+          console.error("New member broadcast email error:", broadcastError.message);
+        });
+    }
 
     return res.status(201).json({
       success: true,

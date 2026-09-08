@@ -40,7 +40,6 @@ async function persistSession({ accessToken, refreshToken, user }) {
   if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
   if (user?._id) await AsyncStorage.setItem('userId', user._id);
   if (user) await AsyncStorage.setItem('userData', JSON.stringify(user));
-  await AsyncStorage.setItem('loginTime', Date.now().toString());
 }
 
 export default function LoginScreen({ navigation }) {

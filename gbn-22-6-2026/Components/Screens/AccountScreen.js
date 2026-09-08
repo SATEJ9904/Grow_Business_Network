@@ -1441,6 +1441,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ translateY: 8 }],
   },
   backText: {
     fontSize: 18,

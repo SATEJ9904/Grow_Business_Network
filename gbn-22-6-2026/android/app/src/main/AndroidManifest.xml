@@ -35,6 +35,23 @@ android:roundIcon="@mipmap/ic_launcher"
           <data android:scheme="gbn" android:host="reset-password" />
           <data android:scheme="gbn" android:host="open" />
         </intent-filter>
-      </activity> 
+        <!-- Android App Links: lets the emailed https://api.gbnsocialassociations.in/open
+             and /reset-password links open this app directly instead of a browser.
+             Requires assetlinks.json (served by the backend) to verify against
+             the release signing certificate's SHA-256 fingerprint. -->
+        <intent-filter android:autoVerify="true">
+          <action android:name="android.intent.action.VIEW" />
+          <category android:name="android.intent.category.DEFAULT" />
+          <category android:name="android.intent.category.BROWSABLE" />
+          <data
+            android:scheme="https"
+            android:host="api.gbnsocialassociations.in"
+            android:pathPrefix="/open" />
+          <data
+            android:scheme="https"
+            android:host="api.gbnsocialassociations.in"
+            android:pathPrefix="/reset-password" />
+        </intent-filter>
+      </activity>
     </application>
 </manifest>

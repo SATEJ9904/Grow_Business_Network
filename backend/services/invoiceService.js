@@ -261,15 +261,7 @@ const drawInvoice = (doc, data) => {
     .text("DESCRIPTION", MARGIN + 12, tableY + 8, { width: descColW - 12 })
     .text("AMOUNT (INR)", MARGIN + descColW, tableY + 8, { width: amtColW - 12, align: "right" });
 
-  const rows = [
-    ["Membership Registration Fee", amounts.baseAmount],
-    [`GST @ ${Math.round((amounts.gstRate || 0.18) * 100)}%`, amounts.gstAmount],
-    [`Razorpay Convenience Fee @ ${Math.round((amounts.commissionRate || 0.02) * 100)}%`, amounts.commission],
-    [
-      `GST on Convenience Fee @ ${Math.round((amounts.commissionGstRate || 0.18) * 100)}%`,
-      amounts.commissionGst,
-    ],
-  ];
+  const rows = [["GBN Membership Fee", amounts.totalAmount]];
 
   let rowY = tableY + 26;
   const rowH = 24;

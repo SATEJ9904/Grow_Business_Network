@@ -402,6 +402,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ translateY: 8 }],
   },
 
   backText: {

@@ -13,6 +13,7 @@ import {
   Alert,
   ScrollView,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../utils/apiConfig';
@@ -28,22 +29,12 @@ import {
   getFriendlyErrorMessage,
 } from '../utils/guards';
 
-const REGISTRATION_FEE = 959;
-const GST_RATE = 0.18;
-const GST_AMOUNT = Math.round(REGISTRATION_FEE * GST_RATE);
-
-// Razorpay charges us a 2% commission plus 18% GST on that commission;
-// passed through to the member as its own line item rather than folded
-// into the membership fee. Each line is rounded independently.
-const RAZORPAY_COMMISSION_RATE = 0.02;
-const RAZORPAY_COMMISSION_GST_RATE = 0.18;
-const RAZORPAY_COMMISSION = Math.round(REGISTRATION_FEE * RAZORPAY_COMMISSION_RATE);
-const RAZORPAY_COMMISSION_GST = Math.round(
-  REGISTRATION_FEE * RAZORPAY_COMMISSION_RATE * RAZORPAY_COMMISSION_GST_RATE,
-);
-
-const TOTAL_FEE =
-  REGISTRATION_FEE + GST_AMOUNT + RAZORPAY_COMMISSION + RAZORPAY_COMMISSION_GST;
+// The registration fee is never hardcoded here - it's fetched from
+// GET /api/payment/registration-fee, which computes it from the backend's
+// REGISTRATION_FEE_PAISE the same way payment/create-order does. That way
+// what the member sees before paying always matches what Razorpay actually
+// charges, with a single source of truth (the .env var) instead of a
+// duplicated constant that can silently drift out of sync with it.
 
 // Mirrors backend/validations/authValidation.js so a field that passes here
 // is guaranteed to pass server-side too - nothing should fail for the first
@@ -83,6 +74,10 @@ export default function RegisterScreen({ navigation }) {
   const [chaptersError, setChaptersError] = useState('');
   const [logo, setLogo] = useState(null);
 
+  const [registrationFee, setRegistrationFee] = useState(null);
+  const [feeLoading, setFeeLoading] = useState(true);
+  const [feeError, setFeeError] = useState('');
+
   const [otpModal, setOtpModal] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -111,7 +106,28 @@ export default function RegisterScreen({ navigation }) {
   useEffect(() => {
     fetchCities();
     fetchChapters();
+    fetchRegistrationFee();
   }, []);
+
+  const fetchRegistrationFee = async () => {
+    try {
+      setFeeLoading(true);
+      setFeeError('');
+
+      const response = await fetch(`${API_URL}payment/registration-fee`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Unable to load the registration fee');
+      }
+
+      setRegistrationFee(data.data.totalAmount);
+    } catch (error) {
+      setFeeError(getFriendlyErrorMessage(error, 'Unable to load the registration fee.'));
+    } finally {
+      setFeeLoading(false);
+    }
+  };
 
   useEffect(() => {
     console.log('otpModal state changed:', otpModal);
@@ -1084,32 +1100,18 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.title}>💳 Registration Fee</Text>
 
             <View style={styles.feeCard}>
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Membership Fee</Text>
-                <Text style={styles.feeValue}>₹{REGISTRATION_FEE}</Text>
-              </View>
-
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>GST (18%)</Text>
-                <Text style={styles.feeValue}>₹{GST_AMOUNT}</Text>
-              </View>
-
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Razorpay Commission (2%)</Text>
-                <Text style={styles.feeValue}>₹{RAZORPAY_COMMISSION}</Text>
-              </View>
-
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>GST on Commission (18%)</Text>
-                <Text style={styles.feeValue}>₹{RAZORPAY_COMMISSION_GST}</Text>
-              </View>
-
-              <View style={styles.feeDivider} />
-
-              <View style={styles.feeRow}>
-                <Text style={styles.feeTotalLabel}>Total Payable</Text>
-                <Text style={styles.feeTotalValue}>₹{TOTAL_FEE}</Text>
-              </View>
+              {feeLoading ? (
+                <ActivityIndicator color="#0B3D2E" />
+              ) : feeError ? (
+                <TouchableOpacity onPress={fetchRegistrationFee}>
+                  <Text style={styles.feeErrorText}>{feeError} Tap to retry.</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.feeRow}>
+                  <Text style={styles.feeLabel}>GBN Membership Fee</Text>
+                  <Text style={styles.feeValue}>₹{registrationFee.toFixed(2)}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.secureBadge}>
@@ -1122,15 +1124,20 @@ export default function RegisterScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.payNowButton,
-                paymentProcessing && styles.disabledButton,
+                (paymentProcessing || feeLoading || !registrationFee) &&
+                  styles.disabledButton,
               ]}
               onPress={guardedHandlePayment}
-              disabled={paymentProcessing}
+              disabled={paymentProcessing || feeLoading || !registrationFee}
             >
               <Text style={styles.payNowText}>
                 {paymentProcessing
                   ? 'Processing...'
-                  : `Pay ₹${TOTAL_FEE} & Register`}
+                  : feeLoading
+                  ? 'Loading fee...'
+                  : !registrationFee
+                  ? 'Fee unavailable'
+                  : `Pay ₹${registrationFee.toFixed(2)} & Register`}
               </Text>
             </TouchableOpacity>
 
@@ -1605,22 +1612,10 @@ const styles = StyleSheet.create({
     color: '#122620',
   },
 
-  feeDivider: {
-    height: 1,
-    backgroundColor: '#E2ECE6',
-    marginVertical: 10,
-  },
-
-  feeTotalLabel: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0B3D2E',
-  },
-
-  feeTotalValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3D2E',
+  feeErrorText: {
+    fontSize: 14,
+    color: '#b3261e',
+    textAlign: 'center',
   },
 
   secureBadge: {

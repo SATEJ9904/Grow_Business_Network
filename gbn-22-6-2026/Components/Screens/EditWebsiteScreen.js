@@ -52,6 +52,8 @@ const EditWebsiteScreen = () => {
 
   const [websiteMode, setWebsiteMode] = useState('service');
 
+  const [colorMode, setColorMode] = useState('light');
+
   const [logo, setLogo] = useState(null);
 
   const [productItems, setProductItems] = useState([]);
@@ -283,6 +285,8 @@ const EditWebsiteScreen = () => {
       if (site?.slug) {
         setWebsiteSlug(site.slug);
       }
+
+      setColorMode(site?.colorMode === 'dark' ? 'dark' : 'light');
 
       setProductItems(normalizeItems(site?.productItems || []));
       setVideoItems(site?.videoItems || []);
@@ -654,6 +658,8 @@ const EditWebsiteScreen = () => {
 
         theme: 'Modern',
 
+        colorMode,
+
         // ================= HERO =================
 
         heroTitle: editWebsiteForm.heroTitle,
@@ -936,6 +942,61 @@ const EditWebsiteScreen = () => {
             </TouchableOpacity>
           </View>
 
+          {/* WEBSITE APPEARANCE (DEFAULT LIGHT / DARK) */}
+
+          <Text style={styles.sectionTitle}>Website Appearance</Text>
+
+          <Text style={styles.hintText}>
+            Visitors can still switch themes on your site — this just sets
+            what they see first.
+          </Text>
+
+          <View style={styles.modeWrapper}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[
+                styles.modeCard,
+                { width: '48%' },
+                colorMode === 'light' && styles.activeMode,
+              ]}
+              onPress={() => setColorMode('light')}
+            >
+              <Text style={styles.modeIcon}>☀️</Text>
+
+              <Text
+                style={[
+                  styles.modeTitle,
+
+                  colorMode === 'light' && styles.activeModeText,
+                ]}
+              >
+                Light
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[
+                styles.modeCard,
+                { width: '48%' },
+                colorMode === 'dark' && styles.activeMode,
+              ]}
+              onPress={() => setColorMode('dark')}
+            >
+              <Text style={styles.modeIcon}>🌙</Text>
+
+              <Text
+                style={[
+                  styles.modeTitle,
+
+                  colorMode === 'dark' && styles.activeModeText,
+                ]}
+              >
+                Dark
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* COMPANY */}
 
           <Text style={styles.label}>Company Name</Text>
@@ -1076,7 +1137,7 @@ const EditWebsiteScreen = () => {
 
           {/* ================= VIDEOS SECTION ================= */}
 
-          {/* <Text style={styles.sectionTitle}>Promotional Videos</Text>
+          <Text style={styles.sectionTitle}>Promotional Videos</Text>
 
           <Text style={styles.helperText}>
             Add videos to showcase your products or services
@@ -1180,7 +1241,7 @@ const EditWebsiteScreen = () => {
                 </View>
               ))}
             </>
-          )} */}
+          )}
 
           {/* ================= SERVICES ================= */}
 
@@ -1891,6 +1952,16 @@ const styles = StyleSheet.create({
 
   activeModeText: {
     color: '#FFFFFF',
+  },
+
+  hintText: {
+    color: '#64748B',
+
+    fontSize: 12,
+
+    marginBottom: 12,
+
+    marginTop: -8,
   },
 
   // ================= IMAGE PICKER =================

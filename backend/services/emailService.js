@@ -5,6 +5,20 @@
 
 const { sendEmail } = require("../config/mailer");
 
+// Real production backend, used whenever API_BASE_URL is unset or points at
+// a private/dev host (e.g. a LAN IP left in .env). Email links must always
+// resolve on the recipient's own device, never on the sender's network —
+// mirrors the same fallback used by the mobile app in apiConfig.js.
+const PRODUCTION_APP_BASE_URL = "https://api.gbnsocialassociations.in";
+
+function getPublicAppBaseUrl() {
+  const raw = (process.env.API_BASE_URL || "").trim().replace(/\/+$/, "");
+  const isPublicHttps = /^https:\/\/(?!localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/i.test(
+    raw,
+  );
+  return isPublicHttps ? raw : PRODUCTION_APP_BASE_URL;
+}
+
 /**
  * Send OTP email to user
  * @param {string} email - Recipient email
@@ -62,7 +76,7 @@ const sendOTPEmail = async (email, otp) => {
  */
 const sendApprovalEmail = async (email, memberName) => {
   const subject = "Your Account Has Been Approved!";
-  const appLink = "gbn://open";
+  const appLink = `${getPublicAppBaseUrl()}/open`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -165,7 +179,7 @@ const sendRejectionEmail = async (email, memberName, reason = "") => {
  */
 const sendPasswordResetEmail = async (email, resetToken, memberName, otp) => {
   const subject = "Password Reset Request - Networking Club";
-  const resetLink = `${process.env.API_BASE_URL}/reset-password?token=${resetToken}`;
+  const resetLink = `${getPublicAppBaseUrl()}/reset-password?token=${resetToken}`;
 
   const otpSection = otp
     ? `
@@ -237,7 +251,7 @@ const sendPasswordResetEmail = async (email, resetToken, memberName, otp) => {
  */
 const sendPasswordResetConfirmationEmail = async (email, memberName) => {
   const subject = "Your Password Has Been Successfully Reset";
-  const appLink = "gbn://open";
+  const appLink = `${getPublicAppBaseUrl()}/open`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -292,7 +306,7 @@ const sendPasswordResetConfirmationEmail = async (email, memberName) => {
  */
 const sendNewMemberJoinedEmail = async (email, recipientName, newMember) => {
   const subject = "A New Member Has Joined GBN!";
-  const appLink = "gbn://open";
+  const appLink = `${getPublicAppBaseUrl()}/open`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -343,7 +357,7 @@ const sendNewMemberJoinedEmail = async (email, recipientName, newMember) => {
  */
 const sendMemberProfileUpdatedEmail = async (email, recipientName, memberName) => {
   const subject = `${memberName} Updated Their Profile on GBN`;
-  const appLink = "gbn://open";
+  const appLink = `${getPublicAppBaseUrl()}/open`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -430,7 +444,7 @@ const sendInvoiceEmail = async (email, memberName, invoice, pdfBuffer) => {
           <div class="summary-box">
             <div class="summary-row"><span class="summary-label">Invoice Number</span><span>${invoice.invoiceNumber}</span></div>
             <div class="summary-row"><span class="summary-label">Invoice Date</span><span>${issuedDate}</span></div>
-            <div class="summary-row"><span class="summary-label">Amount Paid</span><span>₹${invoice.amounts.totalAmount.toFixed(2)}</span></div>
+            <div class="summary-row"><span class="summary-label">GBN Membership Fee</span><span>₹${invoice.amounts.totalAmount.toFixed(2)}</span></div>
           </div>
           <p class="message">Please keep this invoice for your records. If you have any questions about this payment, feel free to contact our support team.</p>
           <div class="footer">

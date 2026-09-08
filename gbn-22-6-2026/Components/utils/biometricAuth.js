@@ -43,8 +43,12 @@ const DEFAULT_META = {
 const credService = userId => `${CRED_SERVICE_PREFIX}${userId}`;
 const metaKey = userId => `${META_KEY_PREFIX}${userId}`;
 
+// Biometric-only: no device passcode/pattern/PIN fallback. A device with
+// only a passcode (no enrolled biometric) never reaches this prompt at all
+// (see getCapability()'s hardware+enrollment check), and a device that does
+// have biometry must not be unlockable by its passcode as a substitute.
 const CRED_OPTIONS = {
-  accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET_OR_DEVICE_PASSCODE,
+  accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET,
   accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
 

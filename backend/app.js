@@ -395,6 +395,7 @@ const Website = require("./models/Website");
 
 // ================= IMPORT UTILITIES =================
 const generateWebsiteHtml = require("./utils/generateWebsite");
+const { renderAppOpenPage } = require("./utils/appLinkPage");
 
 // ================= IMPORT MIDDLEWARE =================
 const {
@@ -463,6 +464,79 @@ app.use(
 );
 
 app.use("/api/", checkDatabaseConnection);
+
+// ================= APP DEEP LINKS (Universal Links / App Links) =================
+// These HTTPS URLs are what the mobile app's "Open GBN App" email buttons
+// and password-reset links point to. iOS Universal Links and Android App
+// Links intercept them before they ever reach a browser when the app is
+// installed and the platform verification below is in place; otherwise
+// this page is shown as a fallback (see utils/appLinkPage.js).
+app.get("/open", (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(
+    renderAppOpenPage({
+      title: "Opening GBN...",
+      message: "Taking you to the GBN app.",
+      customSchemeUrl: "gbn://open",
+    }),
+  );
+});
+
+app.get("/reset-password", (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send("Password reset token is required.");
+  }
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(
+    renderAppOpenPage({
+      title: "Opening GBN...",
+      message: "Taking you to the GBN app to reset your password.",
+      customSchemeUrl: `gbn://reset-password?token=${encodeURIComponent(token)}`,
+    }),
+  );
+});
+
+// Apple Universal Links verification file. Must be served with no
+// extension and a JSON content-type, over HTTPS, with no redirects.
+app.get("/.well-known/apple-app-site-association", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.json({
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: "3HLYUGP25S.com.microtechsolutions.gbnsocialassociation",
+          paths: ["/open", "/reset-password", "/reset-password/*"],
+        },
+      ],
+    },
+  });
+});
+
+// Android App Links verification file.
+// ⚠️ Replace the placeholder fingerprint with the real release-keystore
+// SHA-256 certificate fingerprint before this will verify — see
+// `keytool -list -v -keystore <release>.keystore` (or, for Play App
+// Signing, the "SHA-256 certificate fingerprint" shown under
+// Play Console → Setup → App integrity).
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.gbnsocialassociation",
+        sha256_cert_fingerprints: [
+          "REPLACE_WITH_RELEASE_KEYSTORE_SHA256_FINGERPRINT",
+        ],
+      },
+    },
+  ]);
+});
 
 // ================= 🔥 PUBLIC WEBSITE ROUTE =================
 // 👉 THIS IS YOUR MAIN FEATURE

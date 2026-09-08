@@ -6,7 +6,14 @@
 const express = require("express");
 const router = express.Router();
 
-const { createOrder, verifyPayment } = require("../controllers/paymentController");
+const { getRegistrationFee, createOrder, verifyPayment } = require("../controllers/paymentController");
+
+/**
+ * Current registration fee total, for display before the member commits to
+ * paying. Read-only - creates no Razorpay order.
+ * GET /api/payment/registration-fee
+ */
+router.get("/registration-fee", getRegistrationFee);
 
 /**
  * Create a Razorpay invoice for the registration fee. Razorpay generates

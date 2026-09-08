@@ -158,8 +158,10 @@ const getMemberById = async (req, res, next) => {
       });
     }
 
-    // Check if member is approved
-    if (member.status !== "approved") {
+    // Check if member is approved. Demo accounts are treated the same as
+    // unapproved ones here: they can use the app fully themselves, but
+    // their profile is never shown to other members.
+    if (member.status !== "approved" || member.role === "demo") {
       return res.status(403).json({
         success: false,
         message: "This member profile is not available",

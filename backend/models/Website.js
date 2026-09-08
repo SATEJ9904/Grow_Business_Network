@@ -135,6 +135,15 @@ const websiteSchema = new mongoose.Schema(
 
     theme: String,
 
+    // Default light/dark appearance a visitor sees when the site first
+    // loads. The published site still lets a visitor toggle it manually;
+    // this only controls the starting state.
+    colorMode: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
+    },
+
     layoutId: String,
 
     layoutName: String,

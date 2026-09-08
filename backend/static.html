@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meridian &amp; Partners — Business Consulting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #F7F7F5;
+    --surface: #FFFFFF;
+    --surface-2: #ECEEF0;
+    --border: rgba(15, 23, 35, 0.10);
+    --border-strong: rgba(15, 23, 35, 0.20);
+    --text: #10151D;
+    --muted: #5B6572;
+    --muted-2: #98A2AD;
+    --accent: #1F3A5F;
+    --accent-soft: #4A6FA5;
+    --shadow: 0 40px 90px rgba(15, 23, 35, 0.10);
+    --shadow-sm: 0 14px 34px rgba(15, 23, 35, 0.08);
+    color-scheme: light;
+  }
+  html[data-theme="dark"] {
+    --bg: #0A0D12;
+    --surface: #12161D;
+    --surface-2: #1A1F27;
+    --border: rgba(237, 239, 242, 0.10);
+    --border-strong: rgba(237, 239, 242, 0.20);
+    --text: #EDEFF2;
+    --muted: #9AA3AD;
+    --muted-2: #5B6572;
+    --accent: #7FA1D6;
+    --accent-soft: #A9C2E6;
+    --shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+    --shadow-sm: 0 14px 34px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    overflow-x: hidden;
+    transition: background 0.5s ease, color 0.5s ease;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .eyebrow::before, .eyebrow.center::after { content: ''; width: 30px; height: 1px; background: var(--accent-soft); display: block; }
+  .eyebrow.center { justify-content: center; }
+
+  .serif { font-family: 'Cormorant Garamond', serif; }
+  .grad-text {
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-soft) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  /* ══════════════ NAV ══════════════ */
+  .navbar {
+    position: fixed; top: 0; left: 0; width: 100%; z-index: 900;
+    height: 84px; display: flex; align-items: center;
+    padding: 0 6%; transition: background 0.4s, border-color 0.4s, height 0.4s;
+    border-bottom: 1px solid transparent;
+  }
+  .navbar.scrolled {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    height: 68px;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .logo-mark {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.15rem;
+    color: var(--accent);
+  }
+  .logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.02em; }
+  .nav-links { display: flex; gap: 38px; margin: 0 auto; }
+  .nav-links a {
+    text-decoration: none; color: var(--muted); font-size: 0.82rem;
+    letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500;
+    position: relative; padding-bottom: 4px; transition: color 0.3s;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; left: 0; bottom: 0; width: 0; height: 1px;
+    background: var(--accent); transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-right { display: flex; align-items: center; gap: 18px; }
+
+  .theme-toggle {
+    width: 46px; height: 26px; border-radius: 20px;
+    border: 1px solid var(--border-strong); background: var(--surface-2);
+    position: relative; cursor: pointer; flex-shrink: 0;
+  }
+  .theme-toggle .knob {
+    position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+    color: var(--surface); font-size: 10px; transition: left 0.35s ease;
+  }
+  html[data-theme="dark"] .theme-toggle .knob { left: 22px; }
+
+  .nav-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--accent); color: var(--text);
+    text-decoration: none; font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 11px 24px; border-radius: 2px;
+    transition: background 0.3s, color 0.3s;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--accent); color: var(--surface); }
+
+  /* ══════════════ HERO ══════════════ */
+  .hero { padding: 190px 6% 0; text-align: center; }
+  .hero-eyebrow { justify-content: center; margin-bottom: 26px; }
+  .hero-industry-pill {
+    border: 1px solid var(--border-strong); padding: 4px 14px; border-radius: 40px;
+    font-size: 0.72rem; color: var(--muted); text-transform: none; letter-spacing: 0.02em;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(2.6rem, 6vw, 5.2rem); line-height: 1.06; letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .hero-highlight {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500;
+    font-size: clamp(2.6rem, 6vw, 5.2rem); line-height: 1.06;
+    margin-bottom: 22px;
+  }
+  .hero-subtitle {
+    font-size: 0.82rem; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 26px;
+  }
+  .hero-desc {
+    max-width: 560px; margin: 0 auto 40px; color: var(--muted);
+    font-size: 1.04rem; line-height: 1.85;
+  }
+  .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+  .btn-accent {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--accent); color: #fff;
+    text-decoration: none; padding: 15px 34px; border-radius: 2px;
+    font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--accent); transition: transform 0.35s, box-shadow 0.35s;
+  }
+  .btn-accent:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(31,58,95,0.28); }
+  .btn-line {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent; border: 1px solid var(--border-strong); color: var(--text);
+    text-decoration: none; padding: 15px 34px; border-radius: 2px;
+    font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    transition: border-color 0.35s, transform 0.35s;
+  }
+  .btn-line:hover { border-color: var(--accent); transform: translateY(-3px); }
+
+  .hero-tagline {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.15rem;
+    color: var(--accent); margin-bottom: 60px;
+  }
+
+  .hero-ambient {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 1100px; height: 620px; max-width: 140vw;
+    background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 68%);
+    pointer-events: none; z-index: -1;
+  }
+
+  .hero-media {
+    position: relative; max-width: 1180px; margin: 0 auto;
+    border: 1px solid var(--border-strong); padding: 10px;
+  }
+  .hero-media-inner {
+    aspect-ratio: 16/8; overflow: hidden; position: relative; background: var(--surface-2);
+  }
+  .hero-media-inner img, .hero-media-inner video {
+    width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
+  }
+  .hero-media-caption {
+    position: absolute; bottom: 22px; left: 26px; display: flex; align-items: center; gap: 10px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); padding: 8px 16px; font-size: 0.74rem;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); z-index: 2;
+  }
+  .hero-media-caption .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ══════════════ MEDIA FALLBACK ══════════════
+     Every content image on the page routes through mediaFallback()/
+     avatarFallback() in the script below, so a member's incomplete profile
+     (missing photo, broken upload URL) never shows a broken-image glyph —
+     it degrades to a quiet icon placeholder instead. */
+  .media-frame { position: relative; }
+  .media-frame.media-empty {
+    background: var(--surface-2);
+  }
+  .media-frame.media-empty::after {
+    content: '\f03e'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--muted-2); font-size: 1.8rem;
+  }
+  .avatar-fallback {
+    width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+    background: var(--surface-2); border: 1px solid var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--accent);
+    float: left; margin: 0 16px 10px 0;
+  }
+
+  /* ══════════════ SERVICES BANNER (servicesImage) ══════════════ */
+  .services-banner {
+    position: relative; aspect-ratio: 21/7; overflow: hidden;
+    margin-bottom: 70px; border: 1px solid var(--border-strong);
+  }
+  .services-banner img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.85) brightness(0.62); }
+  .services-banner-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; background: linear-gradient(180deg, rgba(10,13,18,0.15), rgba(10,13,18,0.55));
+  }
+  .services-banner-overlay .eyebrow { color: #fff; }
+  .services-banner-overlay .eyebrow::before, .services-banner-overlay .eyebrow::after { background: rgba(255,255,255,0.6); }
+  .services-banner-overlay h2 { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: clamp(1.8rem, 3.2vw, 3rem); color: #fff; margin-top: 14px; }
+  .services-banner.media-empty { background: var(--surface-2); }
+  .services-banner.media-empty .services-banner-overlay { background: none; }
+  .services-banner.media-empty .services-banner-overlay .eyebrow,
+  .services-banner.media-empty .services-banner-overlay h2 { color: var(--text); }
+  .services-banner.media-empty .services-banner-overlay .eyebrow::before,
+  .services-banner.media-empty .services-banner-overlay .eyebrow::after { background: var(--accent-soft); }
+
+  /* ══════════════ TRUST STRIP ══════════════ */
+  .trust-strip {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 0; margin: 90px 6% 0; padding: 30px 0;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .trust-item {
+    padding: 0 40px; text-align: center; position: relative;
+    font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  }
+  .trust-item strong { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; color: var(--text); font-weight: 600; letter-spacing: 0; margin-bottom: 4px; }
+  .trust-item + .trust-item::before { content:''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--border-strong); }
+
+  /* ══════════════ SECTION PRIMITIVES ══════════════ */
+  .section-wrap { padding: 130px 6%; }
+  .section-hdr { margin-bottom: 70px; }
+  .section-hdr.center { text-align: center; }
+  .section-heading {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(2rem, 3.6vw, 3.4rem); line-height: 1.12; margin-top: 18px; margin-bottom: 18px;
+  }
+  .section-sub { color: var(--muted); font-size: 1rem; max-width: 520px; line-height: 1.85; }
+  .section-hdr.center .section-sub { margin: 0 auto; }
+  .divider-thin { height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong) 20%, var(--border-strong) 80%, transparent); }
+
+  /* ══════════════ ABOUT ══════════════ */
+  .about-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 90px; align-items: center; }
+  .about-media { position: relative; border: 1px solid var(--border-strong); padding: 10px; }
+  .about-media-inner { aspect-ratio: 4/5; overflow: hidden; background: var(--surface-2); }
+  .about-media-inner img { width: 100%; height: 100%; object-fit: cover; }
+  .about-media-frame {
+    position: absolute; top: -18px; right: -18px; width: 60%; height: 60%;
+    border: 1px solid var(--accent-soft); z-index: -1;
+  }
+  .about-pills { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0; }
+  .about-pill {
+    border: 1px solid var(--border-strong); padding: 8px 16px; border-radius: 30px;
+    font-size: 0.76rem; letter-spacing: 0.04em; color: var(--muted);
+  }
+  .about-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 12px; }
+  .about-panel { border-left: 1px solid var(--accent); padding: 4px 0 4px 20px; }
+  .about-panel-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .about-panel p { font-size: 0.92rem; color: var(--muted); line-height: 1.7; }
+
+  /* ══════════════ SERVICES ══════════════ */
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+  .service-card {
+    border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 46px 38px; position: relative; transition: background 0.4s;
+  }
+  .service-card:hover { background: var(--surface); }
+  .service-index {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.95rem;
+    color: var(--accent); margin-bottom: 22px; display: block;
+  }
+  .service-img-wrap { aspect-ratio: 4/3; overflow: hidden; margin-bottom: 26px; }
+  .service-image { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.92) brightness(0.96); transition: transform 0.6s, filter 0.4s; }
+  .service-card:hover .service-image { transform: scale(1.06); filter: saturate(1) brightness(1); }
+  .service-content h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; margin-bottom: 12px; }
+  .service-content p { font-size: 0.92rem; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+  .service-link { font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .service-link i { font-size: 0.68rem; transition: transform 0.3s; }
+  .service-card:hover .service-link i { transform: translateX(4px); }
+
+  /* ══════════════ TESTIMONIALS ══════════════ */
+  .testimonials-band { background: var(--surface-2); }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+  .testimonial-card {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 40px 36px; position: relative;
+  }
+  .testimonial-card .quote-mark {
+    font-family: 'Cormorant Garamond', serif; font-size: 3.4rem; color: var(--accent);
+    line-height: 1; opacity: 0.7; display: block; margin-bottom: 6px;
+  }
+  .testimonial-card img.testimonial-avatar {
+    width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
+    border: 1px solid var(--accent-soft); float: left; margin: 0 16px 10px 0;
+  }
+  .testimonial-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 600; margin-top: 4px; }
+  .testimonial-card span { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 18px; }
+  .testimonial-card p { clear: both; font-size: 0.95rem; font-style: italic; color: var(--muted); line-height: 1.8; }
+  .testimonial-stars { color: var(--accent); font-size: 0.7rem; letter-spacing: 3px; margin: 14px 0 0; }
+
+  /* ══════════════ VIDEOS (from generateVideos()) ══════════════ */
+  #videos.section { padding: 0; }
+  #videos .section-title {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500; text-align: center;
+    font-size: clamp(2rem, 3.6vw, 3.4rem); margin-bottom: 60px;
+  }
+  #videos .videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 26px; }
+  #videos .video-card { border: 1px solid var(--border); background: var(--surface); transition: transform 0.4s, border-color 0.4s; }
+  #videos .video-card:hover { transform: translateY(-6px); border-color: var(--accent-soft); }
+  #videos .video-thumbnail { position: relative; aspect-ratio: 16/9; overflow: hidden; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  #videos .video-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+  #videos .play-icon {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(10,13,18,0.32); font-size: 1rem;
+  }
+  #videos .video-content { padding: 22px 24px 26px; }
+  #videos .video-content h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; }
+  #videos .video-content p { font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; line-height: 1.7; }
+  #videos .video-link { font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; }
+
+  /* ══════════════ CONTACT ══════════════ */
+  .contact-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 70px; align-items: start; }
+  .contact-cards { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .contact-card { display: flex; align-items: flex-start; gap: 18px; background: var(--surface); padding: 24px 26px; }
+  .contact-icon {
+    width: 40px; height: 40px; border: 1px solid var(--accent-soft); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent);
+  }
+  .contact-lbl { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .contact-val { font-size: 0.98rem; }
+  .contact-cta {
+    border: 1px solid var(--border-strong); padding: 50px 44px; position: relative;
+  }
+  .contact-cta::before { content: ''; position: absolute; top: -1px; left: -1px; width: 48px; height: 48px; border-top: 1px solid var(--accent); border-left: 1px solid var(--accent); }
+  .contact-cta::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 48px; height: 48px; border-bottom: 1px solid var(--accent); border-right: 1px solid var(--accent); }
+  .contact-cta h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 500; margin-bottom: 16px; }
+  .contact-cta p { color: var(--muted); font-size: 0.96rem; line-height: 1.8; margin-bottom: 30px; }
+  .contact-socials { display: flex; gap: 12px; margin-top: 28px; }
+  .social-btn {
+    width: 42px; height: 42px; border: 1px solid var(--border-strong); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: var(--muted);
+    text-decoration: none; transition: border-color 0.3s, color 0.3s;
+  }
+  .social-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ══════════════ FOOTER ══════════════ */
+  .footer { padding: 60px 6% 40px; text-align: center; border-top: 1px solid var(--border); }
+  .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; margin-bottom: 8px; }
+  .footer-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--accent); font-size: 1rem; margin-bottom: 30px; }
+  .footer-socials { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; }
+  .footer-copy { font-size: 0.78rem; color: var(--muted-2); letter-spacing: 0.03em; }
+
+  /* ══════════════ REVEAL ══════════════ */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s ease, transform 0.9s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}.d4{transition-delay:.32s}
+
+  /* ══════════════ RESPONSIVE ══════════════ */
+  @media(max-width:960px){
+    .about-grid, .contact-grid { grid-template-columns: 1fr; }
+    .services-grid { grid-template-columns: 1fr 1fr; }
+    .trust-item { padding: 0 22px; }
+  }
+  @media(max-width:680px){
+    .nav-links { display: none; }
+    .hero { padding: 150px 6% 0; }
+    .services-grid { grid-template-columns: 1fr; }
+    .trust-strip { gap: 20px; }
+    .trust-item + .trust-item::before { display: none; }
+    .about-media-frame { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ═══ NAV ═══ -->
+  <nav class="navbar" id="navbar">
+    <a href="#" class="logo">
+      <span class="logo-mark">M</span>
+      <span class="logo-name">Meridian &amp; Partners</span>
+    </a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#testimonials">Reviews</a>
+      <a href="#videos">Insights</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <span class="knob"><i class="fas fa-sun" id="themeIcon"></i></span>
+      </button>
+      <a href="#contact" class="nav-cta">Get in Touch</a>
+    </div>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero">
+    <div class="hero-eyebrow eyebrow center reveal">Business Consulting <span class="hero-industry-pill" style="margin-left:10px;">Professional Services</span></div>
+    <h1 class="hero-title reveal d1">Clarity in Every</h1>
+    <h1 class="hero-highlight grad-text reveal d1">Strategic Decision</h1>
+    <div class="hero-subtitle reveal d2">Strategy · Advisory · Growth</div>
+    <p class="hero-tagline reveal d2">&ldquo;Precision. Trust. Results.&rdquo;</p>
+    <p class="hero-desc reveal d3">Meridian &amp; Partners helps ambitious companies navigate growth, transformation, and complex decisions with clear-eyed strategy and hands-on execution.</p>
+    <div class="hero-actions reveal d4">
+      <a href="#contact" class="btn-accent">Book a Consultation</a>
+      <a href="#services" class="btn-line">Our Services</a>
+    </div>
+    <div style="height:56px"></div>
+    <div class="hero-media reveal d4">
+      <div class="hero-ambient"></div>
+      <div class="hero-media-inner media-frame" id="heroMediaWrap">
+        <!-- {{heroVideo}} renders here when a member uploads one — heroImg is hidden by JS below so the two never stack -->
+        <img id="heroImg" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1600&q=80" alt="Meridian & Partners team at work" onerror="mediaFallback(this)" />
+        <div class="hero-media-caption"><span class="dot"></span> Featured — 2025 Growth Advisory Program</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRUST STRIP ═══ -->
+  <div class="trust-strip reveal">
+    <div class="trust-item"><strong>250+</strong>Clients Advised</div>
+    <div class="trust-item"><strong>18</strong>Years in Practice</div>
+    <div class="trust-item"><strong>95%</strong>Client Retention</div>
+    <div class="trust-item"><strong>Global</strong>Client Base</div>
+  </div>
+
+  <!-- ═══ ABOUT ═══ -->
+  <section id="about">
+    <div class="section-wrap">
+      <div class="about-grid">
+        <div class="about-media reveal">
+          <div class="about-media-frame"></div>
+          <div class="about-media-inner media-frame">
+            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1000&q=80" alt="About Meridian & Partners" onerror="mediaFallback(this)" />
+          </div>
+        </div>
+        <div class="about-text">
+          <div class="eyebrow reveal">About the Firm</div>
+          <h2 class="section-heading reveal d1">Two Decades of <span class="grad-text">Trusted Advice</span></h2>
+          <p class="section-sub reveal d2" style="max-width:none;">Founded in 2007, Meridian &amp; Partners has guided organizations across industries through growth, restructuring, and market expansion — grounded in rigorous analysis and honest counsel.</p>
+          <div class="about-pills reveal d3">
+            <span class="about-pill">Business Consulting</span>
+            <span class="about-pill">Financial Advisory</span>
+            <span class="about-pill">Operations &amp; Growth</span>
+            <span class="about-pill">Global Clients</span>
+          </div>
+          <div class="about-panels reveal d4">
+            <div class="about-panel">
+              <div class="about-panel-label">What Sets Us Apart</div>
+              <p>Every engagement is led by a senior partner from first meeting to final delivery — no hand-offs, no loss of context.</p>
+            </div>
+            <div class="about-panel">
+              <div class="about-panel-label">Currently Exploring</div>
+              <p>Partnerships with growth-stage companies expanding into new markets and organizations navigating leadership transitions.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-thin"></div>
+
+  <!-- ═══ SERVICES ═══ -->
+  <section id="services">
+    <div class="section-wrap" style="padding-bottom:0;">
+      <!-- {{servicesImage}} banner — previously uploaded by members but never rendered anywhere in the old template -->
+      <div class="services-banner media-frame">
+        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&q=80" alt="Meridian & Partners services" onerror="mediaFallback(this)" />
+        <div class="services-banner-overlay">
+          <div class="eyebrow center">What We Offer</div>
+          <h2>Our Services</h2>
+        </div>
+      </div>
+    </div>
+    <div class="section-wrap" style="padding-top:0;">
+      <div class="section-hdr center reveal">
+        <p class="section-sub">A full-service practice, from first strategy session to execution.</p>
+      </div>
+      <div class="services-grid reveal">
+        <div class="service-card">
+          <span class="service-index">01</span>
+          <div class="service-img-wrap media-frame"><img class="service-image" src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=700&q=80" alt="Strategy & Advisory" onerror="mediaFallback(this)" /></div>
+          <div class="service-content">
+            <h3>Strategy &amp; Advisory</h3>
+            <p>Clear-eyed market analysis and long-range planning to help leadership teams make confident decisions.</p>
+            <a href="#contact" class="service-link">Enquire <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="service-card">
+          <span class="service-index">02</span>
+          <div class="service-img-wrap media-frame"><img class="service-image" src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=700&q=80" alt="Financial Planning" onerror="mediaFallback(this)" /></div>
+          <div class="service-content">
+            <h3>Financial Planning</h3>
+            <p>Rigorous financial modeling and capital strategy to support sustainable, well-governed growth.</p>
+            <a href="#contact" class="service-link">Enquire <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="service-card">
+          <span class="service-index">03</span>
+          <div class="service-img-wrap media-frame"><img class="service-image" src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=700&q=80" alt="Operations & Growth" onerror="mediaFallback(this)" /></div>
+          <div class="service-content">
+            <h3>Operations &amp; Growth</h3>
+            <p>Hands-on execution support to turn strategy into measurable operational improvement.</p>
+            <a href="#contact" class="service-link">Enquire <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TESTIMONIALS ═══ -->
+  <section id="testimonials" class="testimonials-band">
+    <div class="section-wrap">
+      <div class="section-hdr center reveal">
+        <div class="eyebrow center">Client Words</div>
+        <h2 class="section-heading">What Clients <span class="grad-text">Say</span></h2>
+      </div>
+      <div class="testimonials-grid reveal">
+        <div class="testimonial-card">
+          <span class="quote-mark">&ldquo;</span>
+          <img class="testimonial-avatar" src="https://randomuser.me/api/portraits/women/44.jpg" alt="Meera Iyer" onerror="avatarFallback(this)" />
+          <h3>Meera Iyer</h3>
+          <span>CEO, Northbridge Retail</span>
+          <p>Meridian understood our business before we finished explaining it. Their plan was the clearest roadmap we've ever had.</p>
+          <div class="testimonial-stars">★★★★★</div>
+        </div>
+        <div class="testimonial-card">
+          <span class="quote-mark">&ldquo;</span>
+          <img class="testimonial-avatar" src="https://randomuser.me/api/portraits/men/54.jpg" alt="Rohan Kapoor" onerror="avatarFallback(this)" />
+          <h3>Rohan Kapoor</h3>
+          <span>Founder, Kessu Manufacturing</span>
+          <p>Rare to find a firm that treats budget and ambition as equally important. Our operations have never run this smoothly.</p>
+          <div class="testimonial-stars">★★★★★</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-thin"></div>
+
+  <!-- ═══ VIDEOS — mirrors generateVideos() output structure exactly ═══ -->
+  <section class="section" id="videos">
+    <div class="section-wrap">
+      <h2 class="section-title reveal">Client <span class="grad-text">Insights</span></h2>
+      <div class="videos-grid reveal">
+        <div class="video-card">
+          <div class="video-thumbnail media-frame">
+            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80" alt="Northbridge Retail — Case Study" loading="lazy" onerror="mediaFallback(this)" />
+            <div class="play-icon">▶️</div>
+          </div>
+          <div class="video-content">
+            <h3>Northbridge Retail</h3>
+            <p>How a 3-year growth plan doubled regional revenue.</p>
+            <a href="#" class="video-link">Watch Film →</a>
+          </div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumbnail media-frame">
+            <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=700&q=80" alt="Kessu Manufacturing — Case Study" loading="lazy" onerror="mediaFallback(this)" />
+            <div class="play-icon">▶️</div>
+          </div>
+          <div class="video-content">
+            <h3>Kessu Manufacturing</h3>
+            <p>Rebuilding operations for a leaner, faster supply chain.</p>
+            <a href="#" class="video-link">Watch Film →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-thin"></div>
+
+  <!-- ═══ CONTACT ═══ -->
+  <section id="contact">
+    <div class="section-wrap">
+      <div class="section-hdr reveal">
+        <div class="eyebrow">Reach Out</div>
+        <h2 class="section-heading">Start the <span class="grad-text">Conversation</span></h2>
+        <p class="section-sub">Tell us about your business. We reply within two business days.</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-cards reveal d1">
+          <div class="contact-card">
+            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+            <div><div class="contact-lbl">Email</div><div class="contact-val">office@meridianpartners.example.com</div></div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-icon"><i class="fas fa-phone-alt"></i></div>
+            <div><div class="contact-lbl">Phone</div><div class="contact-val">+91 98200 11223</div></div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-icon"><i class="fas fa-location-dot"></i></div>
+            <div><div class="contact-lbl">Office</div><div class="contact-val">14 Commerce Tower, Mumbai 400026</div></div>
+          </div>
+        </div>
+        <div class="contact-cta reveal d2">
+          <h3>Let's Build Your Next Chapter</h3>
+          <p>Whether it's a single decision or a full strategic overhaul, we'd love to hear about your goals and how we can help.</p>
+          <a href="mailto:office@meridianpartners.example.com" class="btn-accent">Send a Message</a>
+          <div class="contact-socials">
+            <a href="#" class="social-btn" title="Website"><i class="fas fa-globe"></i></a>
+            <a href="#" class="social-btn" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#" class="social-btn" title="Instagram"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="footer-logo">Meridian &amp; Partners</div>
+    <div class="footer-tagline">&ldquo;Precision. Trust. Results.&rdquo;</div>
+    <div class="footer-socials">
+      <a href="#" class="social-btn"><i class="fas fa-globe"></i></a>
+      <a href="#" class="social-btn"><i class="fab fa-linkedin-in"></i></a>
+      <a href="#" class="social-btn"><i class="fab fa-instagram"></i></a>
+    </div>
+    <div class="footer-copy">&copy; Meridian &amp; Partners · Business Consulting · Global</div>
+  </footer>
+
+  <script>
+    // Nav scroll state
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 30));
+
+    // Theme toggle, persisted per-visitor. The starting data-theme value
+    // (currently hardcoded "light" on <html> above) is the member's chosen
+    // default — in the real template this comes from {{colorMode}}, set in
+    // the app's Website Appearance picker. A visitor's own toggle choice
+    // is remembered in their browser and wins on repeat visits.
+    const root = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    const icon = document.getElementById('themeIcon');
+    function applyTheme(t) {
+      root.setAttribute('data-theme', t);
+      icon.className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+      try { localStorage.setItem('site-theme', t); } catch (e) {}
+    }
+    let saved = null;
+    try { saved = localStorage.getItem('site-theme'); } catch (e) {}
+    applyTheme(saved || root.getAttribute('data-theme') || 'light');
+    toggle.addEventListener('click', () => {
+      applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+
+    /* ════════════════════════════════
+       MEDIA FALLBACKS
+       Any image a member never uploaded, or whose upload URL broke,
+       degrades to a quiet placeholder instead of a broken-image glyph.
+    ════════════════════════════════ */
+    function mediaFallback(img) {
+      img.style.display = 'none';
+      const parent = img.closest('.media-frame') || img.parentElement;
+      if (parent) parent.classList.add('media-empty');
+    }
+    function avatarFallback(img) {
+      const name = img.getAttribute('alt') || '?';
+      const fb = document.createElement('div');
+      fb.className = 'avatar-fallback';
+      fb.textContent = name.trim().charAt(0).toUpperCase() || '?';
+      img.replaceWith(fb);
+    }
+    // Run once for any image already broken before this script executes
+    // (e.g. served from cache) — onerror alone can miss that race.
+    document.querySelectorAll('img[onerror]').forEach(img => {
+      if (img.complete && img.naturalWidth === 0) img.dispatchEvent(new Event('error'));
+    });
+
+    /* ════════════════════════════════
+       HERO MEDIA — video takes priority over the fallback image.
+       Both are absolutely positioned in the same box; without this the
+       image (later in source order) paints over an uploaded hero video.
+    ════════════════════════════════ */
+    (function () {
+      const wrap = document.getElementById('heroMediaWrap');
+      const heroImg = document.getElementById('heroImg');
+      if (!wrap || !heroImg) return;
+      const video = wrap.querySelector('video');
+      if (video) heroImg.style.display = 'none';
+    })();
+
+    // Scroll reveal
+    const revObs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
+    setTimeout(() => document.querySelectorAll('.hero .reveal').forEach(el => el.classList.add('visible')), 80);
+  </script>
+
+</body>
+</html>
