@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navigationRef } from './navigationRef';
 import { refreshSession } from './authSession';
 import { clearSession } from './session';
+import { updateStoredRefreshToken } from './biometricAuth';
 
 // Every screen in this app calls the default `axios` export directly (e.g.
 // `axios.get(...)`, `axios.put(...)`), so a single interceptor registered
@@ -23,6 +24,18 @@ async function refreshAccessToken() {
 
   await AsyncStorage.setItem('accessToken', result.accessToken);
   await AsyncStorage.setItem('refreshToken', result.refreshToken);
+
+  // The backend rotates the refresh token on every use (one token per
+  // account, not per device) — this silent, routine refresh moves the
+  // server's copy forward exactly like a biometric-triggered refresh does.
+  // Without re-persisting it here too, the Keychain copy a biometric login
+  // would present next time is left pointing at an already-rotated-away
+  // token, so biometric login fails and gets auto-disabled (markInvalidated
+  // in LoginScreen.js) even though nothing biometric ever actually changed.
+  // No-ops via isBiometricEnabled() when biometric isn't set up.
+  const userId = await AsyncStorage.getItem('userId');
+  await updateStoredRefreshToken(userId, result.refreshToken);
+
   return result.accessToken;
 }
 

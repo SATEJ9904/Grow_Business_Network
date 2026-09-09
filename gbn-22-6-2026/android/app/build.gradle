@@ -12,7 +12,7 @@ react {
     autolinkLibrariesWithApp()
 }
 
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
@@ -29,16 +29,19 @@ android {
         applicationId "com.gbnsocialassociation"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 5
+        versionName "1.0.4"
     }
 
-    // ✅ APK Split for smaller APKs
+    // ✅ APK Split for smaller APKs (disabled for App Bundle builds — a bundle
+    // can't have multiple per-ABI shrunk resource files, the bundle task splits by ABI itself)
+    def isBundleBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
+
     splits {
         abi {
             reset()
-            enable true
-            universalApk true
+            enable !isBundleBuild
+            universalApk !isBundleBuild
             include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
     }
@@ -76,6 +79,7 @@ android {
             signingConfig signingConfigs.release
 
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources enableProguardInReleaseBuilds
 
             proguardFiles getDefaultProguardFile(
                     "proguard-android.txt"

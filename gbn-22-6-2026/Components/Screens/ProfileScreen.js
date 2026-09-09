@@ -14,7 +14,12 @@ import {
   UIManager,
   ActivityIndicator,
   Alert,
+  Modal,
+  Dimensions,
 } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const PREVIEW_SIZE = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT * 0.7);
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
@@ -41,6 +46,7 @@ const ProfileScreen = ({ route }) => {
   const [coverImage, setCoverImage] = useState(user?.coverImage || null);
   const [loading, setLoading] = useState(true);
   const showSlowNotice = useDelayedNotice(loading, 8000);
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
 
   // FETCH PROFILE API
 
@@ -237,6 +243,14 @@ const ProfileScreen = ({ route }) => {
   const guardedOpenWebsite = useGuardedAction(openWebsite);
   const guardedOpenInstagram = useGuardedAction(openInstagram);
   const guardedOpenLinkedin = useGuardedAction(openLinkedin);
+  const guardedOpenImagePreview = useGuardedAction(
+    () => setImagePreviewVisible(true),
+    250,
+  );
+  const guardedCloseImagePreview = useGuardedAction(
+    () => setImagePreviewVisible(false),
+    250,
+  );
 
   return (
     <View style={styles.container}>
@@ -280,7 +294,11 @@ const ProfileScreen = ({ route }) => {
           <View style={styles.overlay} />
 
           <View style={styles.profileWrapper}>
-            <View>
+            <TouchableOpacity
+              activeOpacity={profileImage ? 0.85 : 1}
+              disabled={!profileImage}
+              onPress={guardedOpenImagePreview}
+            >
               {profileImage ? (
                 <Image
                   source={{ uri: profileImage }}
@@ -294,11 +312,46 @@ const ProfileScreen = ({ route }) => {
                   style={styles.profileImage}
                 />
               )}
-            </View>
+            </TouchableOpacity>
 
             {/* ONLINE DOT */}
           </View>
         </View>
+
+        {profileImage && (
+          <Modal
+            visible={imagePreviewVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={guardedCloseImagePreview}
+          >
+            <TouchableOpacity
+              style={styles.imagePreviewBackdrop}
+              activeOpacity={1}
+              onPress={guardedCloseImagePreview}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={guardedCloseImagePreview}
+                style={styles.imagePreviewCloseBtn}
+              >
+                <Text style={styles.imagePreviewCloseText}>✕</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}}
+                style={styles.imagePreviewFrame}
+              >
+                <Image
+                  source={{ uri: profileImage }}
+                  style={styles.imagePreviewImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+        )}
 
         {/* PROFILE CONTENT */}
 
@@ -640,6 +693,48 @@ const styles = StyleSheet.create({
 
     backgroundColor: '#E5E7EB',
     marginBottom: 70,
+  },
+
+  // ================= IMAGE PREVIEW =================
+
+  imagePreviewBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  imagePreviewCloseBtn: {
+    position: 'absolute',
+    top: 50,
+    right: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+
+  imagePreviewCloseText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+
+  imagePreviewFrame: {
+    width: PREVIEW_SIZE,
+    height: PREVIEW_SIZE,
+    borderRadius: PREVIEW_SIZE / 2,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+
+  imagePreviewImage: {
+    width: '100%',
+    height: '100%',
   },
 
   onlineDot: {

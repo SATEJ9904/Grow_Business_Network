@@ -79,6 +79,11 @@ const EditWebsiteScreen = () => {
 
   const [heroVideo, setHeroVideo] = useState(null);
 
+  // Which media field is mid-upload right now (or null) — drives the
+  // "Uploading..." spinner on the relevant picker so a slow upload never
+  // looks identical to a picker that silently did nothing.
+  const [uploadingField, setUploadingField] = useState(null);
+
   const [videoItems, setVideoItems] = useState([]);
 
   const [newVideoItem, setNewVideoItem] = useState({
@@ -289,7 +294,13 @@ const EditWebsiteScreen = () => {
       setColorMode(site?.colorMode === 'dark' ? 'dark' : 'light');
 
       setProductItems(normalizeItems(site?.productItems || []));
-      setVideoItems(site?.videoItems || []);
+      setVideoItems(
+        (site?.videoItems || []).map(item => ({
+          ...item,
+          videoUrl: getAssetUrl(item.videoUrl) || item.videoUrl,
+          thumbnail: getAssetUrl(item.thumbnail) || item.thumbnail,
+        })),
+      );
 
       if (site?.heroVideo) {
         setHeroVideo({ uri: site.heroVideo });
@@ -337,7 +348,9 @@ const EditWebsiteScreen = () => {
 
         if (!asset) return;
 
+        setUploadingField('logo');
         const uploadedUrl = await uploadMedia(asset, 'image');
+        setUploadingField(null);
 
         console.log('================================');
         console.log('UPLOADED URL:', uploadedUrl);
@@ -368,7 +381,9 @@ const EditWebsiteScreen = () => {
 
         if (!asset) return;
 
+        setUploadingField('serviceImage');
         const uploadedUrl = await uploadMedia(asset, 'image');
+        setUploadingField(null);
         if (!uploadedUrl) return;
 
         setNewServiceItem(prev => ({
@@ -398,7 +413,9 @@ const EditWebsiteScreen = () => {
 
         if (!asset) return;
 
+        setUploadingField('productImage');
         const uploadedUrl = await uploadMedia(asset, 'image');
+        setUploadingField(null);
         if (!uploadedUrl) return;
 
         setNewProductItem(prev => ({
@@ -436,8 +453,9 @@ const EditWebsiteScreen = () => {
 
         console.log('SELECTED VIDEO:', asset);
 
-        Alert.alert('Info', 'Uploading video...');
+        setUploadingField('heroVideo');
         const uploadedUrl = await uploadMedia(asset, 'video');
+        setUploadingField(null);
 
         if (!uploadedUrl) return;
 
@@ -462,8 +480,6 @@ const EditWebsiteScreen = () => {
           heroVideo: uploadedUrl,
         }));
 
-        Alert.alert('Done! ✅', 'Video Updated');
-
         console.log('HERO VIDEO SAVED:', uploadedUrl);
 
         Alert.alert('Done! ✅', 'Video uploaded successfully');
@@ -485,7 +501,9 @@ const EditWebsiteScreen = () => {
 
         if (!asset) return;
 
+        setUploadingField('video');
         const uploadedUrl = await uploadMedia(asset, 'video');
+        setUploadingField(null);
 
         console.log('VIDEO ITEM URL:', uploadedUrl);
 
@@ -499,6 +517,8 @@ const EditWebsiteScreen = () => {
             name: asset.fileName || 'video.mp4',
           },
         }));
+
+        Alert.alert('Done! ✅', 'Video uploaded successfully');
       },
     );
   };
@@ -518,7 +538,9 @@ const EditWebsiteScreen = () => {
 
         if (!asset) return;
 
+        setUploadingField('videoThumbnail');
         const uploadedUrl = await uploadMedia(asset, 'image');
+        setUploadingField(null);
         if (!uploadedUrl) return;
 
         setNewVideoItem(prev => ({
@@ -620,6 +642,12 @@ const EditWebsiteScreen = () => {
       description: '',
       image: null,
     });
+  };
+
+  const removeProduct = index => {
+    const updated = [...productItems];
+    updated.splice(index, 1);
+    setProductItems(updated);
   };
 
   // ================= SAVE =================
@@ -794,6 +822,11 @@ const EditWebsiteScreen = () => {
   const guardedRemoveService = useGuardedAction(index => removeService(index));
   const guardedPickProductImage = useGuardedAction(pickProductImage);
   const guardedAddProduct = useGuardedAction(addProduct);
+  const guardedRemoveProduct = useGuardedAction(index => removeProduct(index));
+  const guardedPickVideo = useGuardedAction(pickVideo);
+  const guardedPickVideoThumbnail = useGuardedAction(pickVideoThumbnail);
+  const guardedAddVideo = useGuardedAction(addVideo);
+  const guardedRemoveVideo = useGuardedAction(index => removeVideo(index));
   const guardedPreviewWebsite = useGuardedAction(previewWebsite);
   const guardedShareWebsite = useGuardedAction(shareWebsite);
   const guardedUpdateWebsite = useGuardedAction(updateWebsite);
@@ -1075,7 +1108,12 @@ const EditWebsiteScreen = () => {
             style={styles.logoPicker}
             onPress={guardedPickLogo}
           >
-            {logo ? (
+            {uploadingField === 'logo' ? (
+              <>
+                <ActivityIndicator size="small" color="#16A34A" />
+                <Text style={styles.logoPickerText}>Uploading…</Text>
+              </>
+            ) : logo ? (
               <Image
                 source={{
                   uri: logo?.uri || logo,
@@ -1128,10 +1166,19 @@ const EditWebsiteScreen = () => {
               activeOpacity={0.9}
               style={styles.videoPicker}
               onPress={guardedPickHeroVideo}
+              disabled={uploadingField === 'heroVideo'}
             >
-              <Text style={styles.videoPickerIcon}>🎥</Text>
-
-              <Text style={styles.videoPickerText}>Upload Hero Video</Text>
+              {uploadingField === 'heroVideo' ? (
+                <>
+                  <ActivityIndicator size="large" color="#0EA5E9" />
+                  <Text style={styles.videoPickerText}>Uploading video…</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.videoPickerIcon}>🎥</Text>
+                  <Text style={styles.videoPickerText}>Upload Hero Video</Text>
+                </>
+              )}
             </TouchableOpacity>
           )}
 
@@ -1156,17 +1203,49 @@ const EditWebsiteScreen = () => {
             }
           />
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.videoPicker}
-            onPress={pickVideo}
-          >
-            <Text style={styles.videoPickerIcon}>🎥</Text>
+          {newVideoItem.video ? (
+            <View style={styles.videoPreviewWrapper}>
+              <Video
+                source={{ uri: newVideoItem.video.uri }}
+                style={styles.videoPreviewPlayer}
+                resizeMode="cover"
+                controls
+                paused
+              />
 
-            <Text style={styles.videoPickerText}>
-              {newVideoItem.video ? 'Video Selected ✓' : 'Upload Video'}
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.uploadedBadge}>
+                <Text style={styles.uploadedText}>✓ Uploaded</Text>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.changeVideoBtn}
+                onPress={guardedPickVideo}
+                disabled={uploadingField === 'video'}
+              >
+                <Text style={styles.changeVideoText}>Change Video</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.videoPicker}
+              onPress={guardedPickVideo}
+              disabled={uploadingField === 'video'}
+            >
+              {uploadingField === 'video' ? (
+                <>
+                  <ActivityIndicator size="large" color="#0EA5E9" />
+                  <Text style={styles.videoPickerText}>Uploading video…</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.videoPickerIcon}>🎥</Text>
+                  <Text style={styles.videoPickerText}>Upload Video</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
           <TextInput
             style={[styles.input, styles.multiInput]}
@@ -1185,9 +1264,12 @@ const EditWebsiteScreen = () => {
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.imagePicker}
-            onPress={pickVideoThumbnail}
+            onPress={guardedPickVideoThumbnail}
+            disabled={uploadingField === 'videoThumbnail'}
           >
-            {newVideoItem.thumbnail ? (
+            {uploadingField === 'videoThumbnail' ? (
+              <ActivityIndicator size="small" color="#16A34A" />
+            ) : newVideoItem.thumbnail ? (
               <Image
                 source={{
                   uri: newVideoItem.thumbnail.uri,
@@ -1204,7 +1286,7 @@ const EditWebsiteScreen = () => {
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.addBtn}
-            onPress={addVideo}
+            onPress={guardedAddVideo}
           >
             <Text style={styles.addBtnText}>Add Video</Text>
           </TouchableOpacity>
@@ -1214,32 +1296,50 @@ const EditWebsiteScreen = () => {
               <Text style={styles.label}>
                 Videos Added ({videoItems.length})
               </Text>
-              {videoItems.map((item, index) => (
-                <View key={item.id} style={styles.videoCard}>
-                  {item.thumbnail && (
-                    <Image
-                      source={{
-                        uri:
-                          typeof item.thumbnail === 'string'
-                            ? item.thumbnail
-                            : item.thumbnail?.uri,
-                      }}
-                      style={styles.cardImage}
-                    />
-                  )}
-                  <Text style={styles.videoCardTitle}>{item.title}</Text>
+              {videoItems.map((item, index) => {
+                const videoUri =
+                  typeof item.video === 'string'
+                    ? item.video
+                    : item.video?.uri || item.videoUrl;
+                return (
+                  <View key={item.id || index} style={styles.videoCard}>
+                    {videoUri ? (
+                      <Video
+                        source={{ uri: videoUri }}
+                        style={styles.cardImage}
+                        resizeMode="cover"
+                        controls
+                        paused
+                      />
+                    ) : (
+                      item.thumbnail && (
+                        <Image
+                          source={{
+                            uri:
+                              typeof item.thumbnail === 'string'
+                                ? item.thumbnail
+                                : item.thumbnail?.uri,
+                          }}
+                          style={styles.cardImage}
+                        />
+                      )
+                    )}
+                    <Text style={styles.videoCardTitle}>{item.title}</Text>
 
-                  <Text style={styles.videoCardDesc}>{item.description}</Text>
+                    <Text style={styles.videoCardDesc}>
+                      {item.description}
+                    </Text>
 
-                  <TouchableOpacity
-                    activeOpacity={0.9}
-                    style={styles.removeBtn}
-                    onPress={() => removeVideo(index)}
-                  >
-                    <Text style={styles.removeText}>Remove</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      style={styles.removeBtn}
+                      onPress={() => guardedRemoveVideo(index)}
+                    >
+                      <Text style={styles.removeText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
             </>
           )}
 
@@ -1280,8 +1380,11 @@ const EditWebsiteScreen = () => {
                 activeOpacity={0.9}
                 style={styles.imagePicker}
                 onPress={guardedPickServiceImage}
+                disabled={uploadingField === 'serviceImage'}
               >
-                {newServiceItem.image ? (
+                {uploadingField === 'serviceImage' ? (
+                  <ActivityIndicator size="small" color="#16A34A" />
+                ) : newServiceItem.image ? (
                   <>
                     <Image
                       source={normalizeImage(newServiceItem.image)}
@@ -1387,12 +1490,20 @@ const EditWebsiteScreen = () => {
                 activeOpacity={0.9}
                 style={styles.imagePicker}
                 onPress={guardedPickProductImage}
+                disabled={uploadingField === 'productImage'}
               >
-                {newProductItem.image ? (
-                  <Image
-                    source={normalizeImage(newProductItem.image)}
-                    style={styles.serviceImage}
-                  />
+                {uploadingField === 'productImage' ? (
+                  <ActivityIndicator size="small" color="#16A34A" />
+                ) : newProductItem.image ? (
+                  <>
+                    <Image
+                      source={normalizeImage(newProductItem.image)}
+                      style={styles.serviceImage}
+                    />
+                    <View style={styles.uploadedBadge}>
+                      <Text style={styles.uploadedText}>✓ Uploaded</Text>
+                    </View>
+                  </>
                 ) : (
                   <Text style={styles.imagePickerText}>
                     Upload Product Image
@@ -1407,6 +1518,38 @@ const EditWebsiteScreen = () => {
               >
                 <Text style={styles.addBtnText}>Add Product</Text>
               </TouchableOpacity>
+
+              {productItems.length > 0 && (
+                <>
+                  <Text style={styles.label}>
+                    Products Added ({productItems.length})
+                  </Text>
+                  {productItems.map((item, index) => (
+                    <View key={item.id || index} style={styles.serviceCard}>
+                      {item.image && (
+                        <Image
+                          source={normalizeImage(item.image)}
+                          style={styles.cardImage}
+                        />
+                      )}
+
+                      <Text style={styles.serviceTitle}>{item.title}</Text>
+                      <Text style={styles.videoUrl}>₹{item.price}</Text>
+                      <Text style={styles.serviceDesc}>
+                        {item.description}
+                      </Text>
+
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        style={styles.removeBtn}
+                        onPress={() => guardedRemoveProduct(index)}
+                      >
+                        <Text style={styles.removeText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </>
+              )}
             </>
           )}
 

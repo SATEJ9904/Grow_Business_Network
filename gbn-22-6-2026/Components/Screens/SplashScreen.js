@@ -9,8 +9,8 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDelayedNotice } from '../utils/guards';
+import { clearSession } from '../utils/session';
 
 const BG = '#0B3D2E';
 const ORANGE = '#F07E1D';
@@ -75,25 +75,14 @@ export default function SplashScreen({ navigation, route }) {
 
     const checkLogin = async () => {
       try {
-        const user = await AsyncStorage.getItem('userData');
-        const accessToken = await AsyncStorage.getItem('accessToken');
-
-        // Stay logged in until explicit logout or a dead refresh token —
-        // both handled by the axios 401 interceptor (authInterceptor.js),
-        // which refreshes the access token transparently on the first API
-        // call and only then falls back to Login if the refresh token
-        // itself is invalid.
-        if (user && accessToken) {
-          console.log('✅ Session found - auto-login');
-          navigation.replace('Dashboard');
-          return;
-        }
-
-        navigation.replace('Login');
+        // Always require a fresh login on cold start — preserves biometric
+        // config/counters for this account, same as the other logout paths
+        // (App.js, authInterceptor.js), so the biometric button still shows.
+        await clearSession();
       } catch (error) {
-        console.log('🚨 Splash login check failed:', error);
-        navigation.replace('Login');
+        console.log('🚨 Splash session clear failed:', error);
       } finally {
+        navigation.replace('Login');
         setInitializing(false);
       }
     };

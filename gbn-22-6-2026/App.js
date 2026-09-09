@@ -37,6 +37,9 @@ import './Components/utils/authInterceptor';
 
 const Stack = createNativeStackNavigator();
 
+const BACKGROUNDED_AT_KEY = 'backgroundedAt';
+const SESSION_GRACE_MS = 30 * 60 * 1000; // keep the session alive across up to 30 min backgrounded
+
 const linking = {
   prefixes: ['gbn://', 'https://api.gbnsocialassociations.in'],
   config: {
@@ -67,23 +70,33 @@ export default function App() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async nextState => {
-      // Backgrounding (Home button, task switch, or the precursor to the
-      // user swiping the app away) logs the session out immediately, so
-      // reopening the app always requires a fresh login. The one exception
-      // is an in-flight Razorpay payment, which backgrounds the app itself
-      // to hand off to a UPI app/browser — see paymentGuard.js.
+      // Backgrounding (Home button, task switch, or handing off to a native
+      // picker like the image/video library) just records when it happened.
+      // The session only actually gets cleared on resume, and only if more
+      // than SESSION_GRACE_MS has passed — so a quick trip to the photo
+      // picker or another app doesn't force a fresh login, but leaving the
+      // app idle for a while does. An in-flight Razorpay payment (which
+      // backgrounds the app to hand off to a UPI app/browser) is exempted
+      // from the grace period entirely — see paymentGuard.js.
       if (nextState === 'background') {
         try {
           if (await isPaymentInFlight()) return;
-          await clearSession();
+          await AsyncStorage.setItem(BACKGROUNDED_AT_KEY, String(Date.now()));
         } catch (err) {
-          console.log('Background logout failed:', err);
+          console.log('Recording background timestamp failed:', err);
         }
         return;
       }
 
       if (nextState === 'active') {
         try {
+          const backgroundedAt = await AsyncStorage.getItem(BACKGROUNDED_AT_KEY);
+          await AsyncStorage.removeItem(BACKGROUNDED_AT_KEY);
+
+          if (backgroundedAt && Date.now() - Number(backgroundedAt) > SESSION_GRACE_MS) {
+            await clearSession();
+          }
+
           const accessToken = await AsyncStorage.getItem('accessToken');
           if (!accessToken) {
             navigationRef.current?.reset({

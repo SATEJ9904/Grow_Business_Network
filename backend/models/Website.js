@@ -203,6 +203,34 @@ const websiteSchema = new mongoose.Schema(
       default: "",
     },
 
+    industry: {
+      type: String,
+      default: "",
+    },
+
+    city: {
+      type: String,
+      default: "",
+    },
+
+    // Social links, shown as icons in the generated site's contact/footer
+    // sections — fall back to the member's profile fields when blank here
+    // (see the fallback chains in routes/websiteRoutes.js).
+    website: {
+      type: String,
+      default: "",
+    },
+
+    linkedin: {
+      type: String,
+      default: "",
+    },
+
+    instagram: {
+      type: String,
+      default: "",
+    },
+
     // ================= COLORS =================
 
     primaryColor: {

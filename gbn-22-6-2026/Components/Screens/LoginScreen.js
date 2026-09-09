@@ -32,7 +32,7 @@ const BIOMETRIC_FAILURE_MESSAGES = {
     "Your biometric login needs to be set up again — you can do that from Security settings after you log in.",
   unavailable:
     'Biometric login is no longer available on this device. Please use your password.',
-  failed: 'Fingerprint not recognized. Try again.',
+  failed: "Couldn't complete biometric login. Please try again or use your password.",
 };
 
 async function persistSession({ accessToken, refreshToken, user }) {
@@ -40,6 +40,16 @@ async function persistSession({ accessToken, refreshToken, user }) {
   if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
   if (user?._id) await AsyncStorage.setItem('userId', user._id);
   if (user) await AsyncStorage.setItem('userData', JSON.stringify(user));
+
+  // The backend keeps one refresh token per account and rotates it on every
+  // login (password or biometric) or silent refresh — so a plain password
+  // login while biometric is already enabled still moves the server's copy
+  // forward and orphans the one saved in Keychain. Re-sync it here too, on
+  // every login, not just the biometric one; a no-op via isBiometricEnabled()
+  // when biometric isn't set up for this account.
+  if (user?._id && refreshToken) {
+    await biometricAuth.updateStoredRefreshToken(user._id, refreshToken);
+  }
 }
 
 export default function LoginScreen({ navigation }) {
@@ -243,9 +253,11 @@ export default function LoginScreen({ navigation }) {
     const userId = biometricState.configuredUserId;
     if (!userId || biometricBusy) return;
 
+    console.log('[LoginScreen] handleBiometricLogin: tapped for userId =', userId);
     setBiometricBusy(true);
     try {
       const unlock = await biometricAuth.unlockWithBiometric(userId);
+      console.log('[LoginScreen] handleBiometricLogin: unlock result =', unlock);
 
       if (!unlock.ok) {
         if (unlock.reason !== 'cancelled') {
@@ -262,6 +274,7 @@ export default function LoginScreen({ navigation }) {
       }
 
       const refreshed = await refreshSession(unlock.refreshToken);
+      console.log('[LoginScreen] handleBiometricLogin: refreshSession succeeded =', !!refreshed);
       if (!refreshed) {
         // The stored refresh token was rejected server-side — it's stale
         // (rotated/expired), not a generic network hiccup. Clear it so the
@@ -288,7 +301,9 @@ export default function LoginScreen({ navigation }) {
         refreshToken: refreshed.refreshToken,
         user,
       });
+      console.log('[LoginScreen] handleBiometricLogin: finished login');
     } catch (error) {
+      console.log('[LoginScreen] handleBiometricLogin: caught error ->', error?.message || error);
       Alert.alert('Oops!', getFriendlyErrorMessage(error));
     } finally {
       setBiometricBusy(false);
@@ -297,12 +312,14 @@ export default function LoginScreen({ navigation }) {
 
   const handleSetUpBiometric = async () => {
     if (!setupPrompt) return;
+    console.log('[LoginScreen] handleSetUpBiometric: enabling for userId =', setupPrompt.userId);
     setSettingUp(true);
     try {
       const ok = await biometricAuth.enableBiometric(
         setupPrompt.userId,
         setupPrompt.refreshToken,
       );
+      console.log('[LoginScreen] handleSetUpBiometric: enableBiometric ok =', ok);
       if (!ok) {
         Alert.alert(
           'Oops!',
@@ -310,7 +327,7 @@ export default function LoginScreen({ navigation }) {
         );
       }
     } catch (error) {
-      console.log('Biometric setup error:', error);
+      console.log('[LoginScreen] Biometric setup error:', error);
     } finally {
       setSettingUp(false);
       setSetupPrompt(null);

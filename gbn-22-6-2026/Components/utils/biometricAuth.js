@@ -132,12 +132,31 @@ export async function getLoginScreenBiometricState() {
 }
 
 export async function enableBiometric(userId, refreshToken) {
-  if (!userId || !refreshToken) return false;
+  if (!userId || !refreshToken) {
+    console.log('[biometricAuth] enableBiometric: missing userId/refreshToken', {
+      hasUserId: !!userId,
+      hasRefreshToken: !!refreshToken,
+    });
+    return false;
+  }
 
-  const result = await Keychain.setGenericPassword('gbn', refreshToken, {
+  console.log('[biometricAuth] enableBiometric: writing credential', {
+    userId,
     service: credService(userId),
-    ...CRED_OPTIONS,
   });
+
+  let result;
+  try {
+    result = await Keychain.setGenericPassword('gbn', refreshToken, {
+      service: credService(userId),
+      ...CRED_OPTIONS,
+    });
+  } catch (error) {
+    console.log('[biometricAuth] enableBiometric: setGenericPassword threw', error?.message || error);
+    return false;
+  }
+
+  console.log('[biometricAuth] enableBiometric: setGenericPassword result =', result);
   if (!result) return false;
 
   const meta = await getMeta(userId);
@@ -145,6 +164,7 @@ export async function enableBiometric(userId, refreshToken) {
   meta.biometricInvalidated = false;
   await saveMeta(userId, meta);
   await setLastAccountId(userId);
+  console.log('[biometricAuth] enableBiometric: enabled + last account set', userId);
   return true;
 }
 
@@ -206,6 +226,22 @@ export async function updateStoredRefreshToken(userId, newRefreshToken) {
 function classifyFailure(error) {
   const message = String(error?.message || error || '').toLowerCase();
   if (message.includes('invalidat')) return 'invalidated';
+  // Android silently deletes and regenerates the Keystore key backing this
+  // credential whenever it becomes unrecoverable (most commonly: the
+  // enrolled fingerprints changed since setup). The refresh token stored
+  // under the old key is then permanently undecryptable — the scan itself
+  // can keep succeeding, but this specific decrypt will fail forever, not
+  // just once. Treat it the same as an OS-level invalidation rather than a
+  // fingerprint mismatch, so the stale entry gets cleared and the user is
+  // told to set biometric login up again instead of being told to "try
+  // again" on a scan that was never the problem.
+  if (
+    error?.code === 'E_CRYPTO_FAILED' ||
+    message.includes('authentication tag') ||
+    message.includes('decryption failed')
+  ) {
+    return 'invalidated';
+  }
   if (message.includes('lockout') || message.includes('too many attempts')) {
     return 'lockout';
   }
@@ -228,27 +264,58 @@ function classifyFailure(error) {
  * 'cancelled' | 'lockout' | 'invalidated' | 'unavailable' | 'failed'.
  */
 export async function unlockWithBiometric(userId) {
-  if (!userId) return { ok: false, reason: 'unavailable' };
+  if (!userId) {
+    console.log('[biometricAuth] unlockWithBiometric: no userId provided');
+    return { ok: false, reason: 'unavailable' };
+  }
+
+  console.log('[biometricAuth] unlockWithBiometric: requesting credential', {
+    userId,
+    service: credService(userId),
+  });
 
   try {
     const credentials = await Keychain.getGenericPassword({
       service: credService(userId),
+      // Android must receive the same policy used to create the KeyStore
+      // credential. Without it, the native prompt can succeed but the
+      // subsequent decryption is attempted without the biometric
+      // authentication context and fails as a generic authentication error.
+      ...CRED_OPTIONS,
       authenticationPrompt: {
         title: 'Log in to GBN',
         cancel: 'Cancel',
       },
     });
 
+    console.log('[biometricAuth] unlockWithBiometric: getGenericPassword resolved', {
+      gotCredentials: !!credentials,
+    });
+
     if (!credentials) {
       // Expected to exist (we only offer the button when biometricEnabled
       // is true) — its absence means the OS silently dropped it.
+      console.log('[biometricAuth] unlockWithBiometric: resolved falsy -> marking invalidated');
       await markInvalidated(userId);
       return { ok: false, reason: 'invalidated' };
     }
 
+    console.log('[biometricAuth] unlockWithBiometric: success');
     return { ok: true, refreshToken: credentials.password };
   } catch (error) {
     const reason = classifyFailure(error);
+    // The OS prompt can succeed while the *decryption* that follows still
+    // throws (e.g. Android Keystore auth-timing edge cases, or an iOS
+    // errSecItemNotFound after a service-name mismatch). Log the raw error
+    // so an unrecognized message can be triaged instead of silently
+    // reported to the user as a fingerprint mismatch.
+    console.warn(
+      '[biometricAuth] unlockWithBiometric threw ->',
+      'reason:', reason,
+      'name:', error?.name,
+      'code:', error?.code,
+      'message:', error?.message || error,
+    );
     if (reason === 'invalidated' || reason === 'unavailable') {
       await markInvalidated(userId);
     }

@@ -104,6 +104,26 @@ const ecommerceLayout = require("../layouts/ecommerce-modern");
 
 const hybridLayout = require("../layouts/hybrid-modern");
 
+// ================= EXTERNAL LINK HELPER =================
+// A member entering "www.instagram.com" (no scheme) into their profile
+// isn't wrong, but dropped straight into an <a href> it resolves as a path
+// *relative to the site's own URL* (e.g. https://.../site/www.instagram.com)
+// instead of an external navigation. Any scheme-less value is treated as
+// missing an "https://" and gets one prepended; mailto:/tel: links and
+// already-absolute URLs pass through untouched.
+const normalizeExternalUrl = (url, fallback = "#") => {
+  if (!url || typeof url !== "string") return fallback;
+
+  const trimmed = url.trim();
+  if (!trimmed) return fallback;
+
+  if (/^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+};
+
 // ================= IMAGE URL HELPER =================
 const getProperImageUrl = (image, apiBaseUrl = "") => {
   if (!image) return "";
@@ -499,11 +519,14 @@ const generateWebsiteHtml = (data, apiBaseUrl = "") => {
 
   html = html.replace(/{{businessCategory}}/g, data.businessCategory || "");
 
-  html = html.replace(/{{website}}/g, data.website || "#");
+  html = html.replace(/{{website}}/g, normalizeExternalUrl(data.website));
 
-  html = html.replace(/{{linkedin}}/g, data.linkedin || "#");
+  html = html.replace(/{{linkedin}}/g, normalizeExternalUrl(data.linkedin));
 
-  html = html.replace(/{{instagram}}/g, data.instagram || "#");
+  html = html.replace(
+    /{{instagram}}/g,
+    normalizeExternalUrl(data.instagram),
+  );
 
   html = html.replace(/{{city}}/g, data.city || "");
 

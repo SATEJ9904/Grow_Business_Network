@@ -932,7 +932,10 @@ export default function RegisterScreen({ navigation }) {
         )}
 
         {step === 2 && (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <Text style={styles.title}>🏢 Business Details</Text>
 
             <TextInput
@@ -975,7 +978,11 @@ export default function RegisterScreen({ navigation }) {
               <View style={styles.dropdownPanel}>
                 <Text style={styles.dropdownTitle}>Select City</Text>
 
-                <ScrollView style={styles.dropdownScroll}>
+                <ScrollView
+                  style={styles.dropdownScroll}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
+                >
                   {cities.map((city, index) => (
                     <TouchableOpacity
                       key={index}
@@ -1035,7 +1042,11 @@ export default function RegisterScreen({ navigation }) {
                 {chapterDropdownVisible && (
                   <View style={styles.dropdownPanel}>
                     <Text style={styles.dropdownTitle}>Select a Chapter</Text>
-                    <ScrollView style={styles.dropdownScroll}>
+                    <ScrollView
+                      style={styles.dropdownScroll}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                    >
                       {filteredChapters && filteredChapters.length > 0 ? (
                         filteredChapters.map(ch => (
                           <TouchableOpacity

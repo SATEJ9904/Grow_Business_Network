@@ -295,21 +295,16 @@ const SelectChapterScreen = ({ navigation }) => {
 
           <View style={styles.dropdownContainer}>
             <Text style={styles.dropdownLabel}>Choose Your City</Text>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={() => dropdownRef.current?.open()}
-            >
-              <Dropdown
-                ref={dropdownRef}
-                style={styles.dropdown}
-                data={cities}
-                labelField="label"
-                valueField="value"
-                placeholder="Select City"
-                value={selectedCity}
-                onChange={item => getChapters(item.value)}
-              />
-            </TouchableOpacity>
+            <Dropdown
+              ref={dropdownRef}
+              style={styles.dropdown}
+              data={cities}
+              labelField="label"
+              valueField="value"
+              placeholder="Select City"
+              value={selectedCity}
+              onChange={item => getChapters(item.value)}
+            />
           </View>
         </View>
 

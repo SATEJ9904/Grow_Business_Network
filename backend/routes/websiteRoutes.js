@@ -827,10 +827,37 @@ router.post(
         });
       }
 
+      // Same profile-fallback pattern as /save-website — needed so a
+      // website saved before a profile field existed on this schema (or
+      // simply never filled in on the site itself) still regenerates with
+      // the member's real values instead of falling back to "#"/"".
+      const user = await User.findById(website.userId);
+
       const apiBaseUrl =
         process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`;
 
-      website.html = generateWebsiteHtml(website, apiBaseUrl);
+      const websiteData = {
+        ...website.toObject(),
+        heroTitle: website.heroTitle || user?.uniqueBusiness || "",
+        heroHighlight: website.heroHighlight || user?.tagline || "",
+        heroSubtitle: website.heroSubtitle || user?.businessCategory || "",
+        heroDescription: website.heroDescription || user?.expertise || "",
+        about: website.about || user?.aboutBusiness || "",
+        expertise: website.expertise || user?.expertise || "",
+        uniqueBusiness: website.uniqueBusiness || user?.uniqueBusiness || "",
+        tagline: website.tagline || user?.tagline || "",
+        industry: website.industry || user?.industry || "",
+        businessCategory:
+          website.businessCategory || user?.businessCategory || "",
+        growthOpportunities:
+          website.growthOpportunities || user?.growthOpportunities || "",
+        website: website.website || user?.website || "",
+        linkedin: website.linkedin || user?.linkedin || "",
+        instagram: website.instagram || user?.instagram || "",
+        city: website.city || user?.city || "",
+      };
+
+      website.html = generateWebsiteHtml(websiteData, apiBaseUrl);
 
       await website.save();
 

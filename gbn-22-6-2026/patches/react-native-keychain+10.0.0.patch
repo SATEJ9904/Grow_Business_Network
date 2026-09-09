@@ -1,0 +1,20 @@
+diff --git a/node_modules/react-native-keychain/android/src/main/java/com/oblador/keychain/cipherStorage/CipherStorageBase.kt b/node_modules/react-native-keychain/android/src/main/java/com/oblador/keychain/cipherStorage/CipherStorageBase.kt
+index adc9c00..720e22b 100644
+--- a/node_modules/react-native-keychain/android/src/main/java/com/oblador/keychain/cipherStorage/CipherStorageBase.kt
++++ b/node_modules/react-native-keychain/android/src/main/java/com/oblador/keychain/cipherStorage/CipherStorageBase.kt
+@@ -378,7 +378,14 @@ abstract class CipherStorageBase(protected val applicationContext: Context) : Ci
+     // see https://developer.android.com/training/articles/keystore#HardwareSecurityModule
+ 
+     var secretKey: Key? = null
+-    val supportsSecureHardware = DeviceAvailability.isStrongboxAvailable(applicationContext)
++    // Patched: some StrongBox implementations (observed on Motorola devices
++    // with a Thales secure element) generate a key successfully but cannot
++    // reliably retrieve it in a later app process, causing every biometric
++    // unlock after an app restart to permanently fail with a GCM auth-tag
++    // mismatch even though the fingerprint scan itself succeeds. The regular
++    // (non-StrongBox) hardware-backed keystore does not exhibit this and is
++    // still hardware-backed, just not in the dedicated secure element.
++    val supportsSecureHardware = false
+ 
+     if (supportsSecureHardware) {
+       try {
