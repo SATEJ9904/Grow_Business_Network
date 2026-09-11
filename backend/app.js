@@ -396,6 +396,7 @@ const Website = require("./models/Website");
 // ================= IMPORT UTILITIES =================
 const generateWebsiteHtml = require("./utils/generateWebsite");
 const { renderAppOpenPage } = require("./utils/appLinkPage");
+const { renderDeletionRequestPage } = require("./utils/deletionRequestPage");
 
 // ================= IMPORT MIDDLEWARE =================
 const {
@@ -480,6 +481,16 @@ app.get("/open", (req, res) => {
       customSchemeUrl: "gbn://open",
     }),
   );
+});
+
+// Public "Account Deletion Request" page - this is where the mobile app's
+// Delete Account flow sends a member after they confirm their password and
+// email OTP. Mounted at both "/" and "/support" since the support subdomain
+// (support.gbnsocialassociations.in) is expected to proxy straight to this
+// same backend with no path of its own.
+app.get(["/", "/support"], (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(renderDeletionRequestPage());
 });
 
 app.get("/reset-password", (req, res) => {

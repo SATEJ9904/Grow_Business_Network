@@ -12,6 +12,7 @@ import {
   Trash2,
   Users as UsersIcon,
   UserPlus,
+  UserX,
   Calendar,
   Bell,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import Chapters from "./components/Chapters";
 import CreateMember from "./components/CreateMember";
 import Meetings from "./components/Meetings";
 import Notifications from "./components/Notifications";
+import DeletedRecords from "./components/DeletedRecords";
 
 const AdminDashboard = ({ onLogout }) => {
   const [currentPage, setCurrentPage] = useState("home");
@@ -183,6 +185,8 @@ const AdminDashboard = ({ onLogout }) => {
     meetings: "Meetings",
     notifications: "Notifications",
     "create-member": "Create Member",
+    "deletion-requests": "Deletion Requests",
+    "deleted-records": "Deleted Accounts",
     activities: "Activity Logs",
   };
 
@@ -233,6 +237,12 @@ const AdminDashboard = ({ onLogout }) => {
       id: "deletion-requests",
       label: "Deletion Requests",
       icon: <Trash2 size={20} />,
+    },
+
+    {
+      id: "deleted-records",
+      label: "Deleted Accounts",
+      icon: <UserX size={20} />,
     },
 
     {
@@ -387,6 +397,11 @@ const AdminDashboard = ({ onLogout }) => {
           {currentPage === "deletion-requests" && (
             <div className="admin-page-container">
               <DeletionRequests />
+            </div>
+          )}
+          {currentPage === "deleted-records" && (
+            <div className="admin-page-container">
+              <DeletedRecords />
             </div>
           )}
           {currentPage === "activities" && (

@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Your Account – GBN (Grow Business Network)</title>
+    <meta
+      name="description"
+      content="Submit an account deletion request for your GBN (Grow Business Network) application account."
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ============================================================
+       CSS CUSTOM PROPERTIES
+    ============================================================ */
+      :root {
+        --teal: #003c43;
+        --teal-light: #005560;
+        --teal-dark: #002830;
+        --orange: #ff7722;
+        --orange-dark: #e5640f;
+        --orange-glow: rgba(255, 119, 34, 0.18);
+        --white: #ffffff;
+        --bg: #f4f7f8;
+        --card-bg: #ffffff;
+        --text-main: #1a2b2e;
+        --text-muted: #5a7278;
+        --text-light: #8fa9b0;
+        --border: #d6e4e7;
+        --warning-bg: #fff8f4;
+        --warning-border: #ffd1b3;
+        --info-bg: #edf6f7;
+        --info-border: #b2d8dc;
+        --error-red: #d93025;
+        --success-green: #1e7e34;
+        --radius-sm: 8px;
+        --radius-md: 14px;
+        --radius-lg: 22px;
+        --shadow-card:
+          0 4px 24px rgba(0, 60, 67, 0.1), 0 1px 4px rgba(0, 60, 67, 0.06);
+        --shadow-btn: 0 4px 16px rgba(255, 119, 34, 0.3);
+        --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        --font-display: "Sora", sans-serif;
+        --font-body: "Inter", sans-serif;
+      }
+
+      /* ============================================================
+       RESET & BASE
+    ============================================================ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background: var(--bg);
+        color: var(--text-main);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ============================================================
+       LAYOUT
+    ============================================================ */
+      .page-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 32px 16px 0;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        width: 100%;
+        max-width: 640px;
+        overflow: hidden;
+        margin-bottom: 32px;
+        animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      @keyframes cardIn {
+        from {
+          opacity: 0;
+          transform: translateY(28px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ============================================================
+       HEADER BAND
+    ============================================================ */
+      .card-header {
+        background: linear-gradient(
+          140deg,
+          var(--teal-dark) 0%,
+          var(--teal) 60%,
+          var(--teal-light) 100%
+        );
+        padding: 40px 32px 32px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Subtle decorative ring */
+      .card-header::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        border: 40px solid rgba(255, 255, 255, 0.04);
+        pointer-events: none;
+      }
+      .card-header::after {
+        content: "";
+        position: absolute;
+        bottom: -40px;
+        left: -40px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        border: 30px solid rgba(255, 119, 34, 0.08);
+        pointer-events: none;
+      }
+
+      /* Logo */
+      .logo-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+
+      .logo-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 10px;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(4px);
+      }
+
+      /* Fallback logo if image fails */
+      .logo-fallback {
+        width: 80px;
+        height: 80px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-display);
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--white);
+        letter-spacing: -1px;
+      }
+
+      .app-name {
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+
+      .header-title {
+        font-family: var(--font-display);
+        font-size: clamp(1.35rem, 4vw, 1.75rem);
+        font-weight: 700;
+        color: var(--white);
+        margin-bottom: 10px;
+        line-height: 1.25;
+      }
+
+      .header-sub {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.68);
+        max-width: 420px;
+        margin: 0 auto;
+        line-height: 1.65;
+      }
+
+      /* Danger badge */
+      .danger-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(217, 48, 37, 0.18);
+        border: 1px solid rgba(217, 48, 37, 0.35);
+        color: #ffb3ae;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 4px 12px;
+        border-radius: 100px;
+        margin-bottom: 18px;
+      }
+
+      /* ============================================================
+       CARD BODY
+    ============================================================ */
+      .card-body {
+        padding: 32px;
+      }
+
+      /* ============================================================
+       INFO BOX
+    ============================================================ */
+      .info-box {
+        background: var(--info-bg);
+        border: 1px solid var(--info-border);
+        border-left: 4px solid var(--teal);
+        border-radius: var(--radius-md);
+        padding: 20px 22px;
+        margin-bottom: 20px;
+      }
+
+      .info-box-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--teal);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .info-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+
+      .info-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 13.5px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      .info-list li .bullet-icon {
+        color: var(--teal);
+        font-size: 10px;
+        margin-top: 4px;
+        flex-shrink: 0;
+      }
+
+      /* ============================================================
+       WARNING BOX
+    ============================================================ */
+      .warning-box {
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        border-left: 4px solid var(--orange);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .warning-box i {
+        color: var(--orange);
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .warning-box p {
+        font-size: 13px;
+        font-weight: 600;
+        color: #9a3800;
+        line-height: 1.45;
+      }
+
+      /* ============================================================
+       FORM
+    ============================================================ */
+      .form-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 16px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 7px;
+      }
+
+      .form-label span.req {
+        color: var(--orange);
+        margin-left: 2px;
+      }
+
+      .input-wrap {
+        position: relative;
+      }
+
+      .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--teal);
+        font-size: 15px;
+        pointer-events: none;
+        transition: color var(--transition);
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 13px 14px 13px 42px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 14px;
+        color: var(--text-main);
+        background: #f9fbfc;
+        transition:
+          border-color var(--transition),
+          box-shadow var(--transition),
+          background var(--transition);
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      .form-input::placeholder {
+        color: var(--text-light);
+      }
+
+      .form-input:focus {
+        border-color: var(--teal);
+        background: var(--white);
+        box-shadow: 0 0 0 3px rgba(0, 84, 96, 0.1);
+      }
+
+      .form-input:focus ~ .input-icon,
+      .input-wrap:focus-within .input-icon {
+        color: var(--teal-light);
+      }
+
+      /* Validation states */
+      .form-input.is-error {
+        border-color: var(--error-red);
+        background: #fff6f6;
+      }
+      .form-input.is-valid {
+        border-color: #28a745;
+        background: #f6fff8;
+      }
+
+      .field-error {
+        font-size: 12px;
+        color: var(--error-red);
+        margin-top: 5px;
+        display: none;
+        align-items: center;
+        gap: 5px;
+      }
+      .field-error.show {
+        display: flex;
+      }
+
+      /* Checkbox */
+      .checkbox-wrap {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 28px;
+        cursor: pointer;
+      }
+
+      .checkbox-wrap input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-radius: 5px;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-top: 1px;
+        transition:
+          border-color var(--transition),
+          background var(--transition);
+        position: relative;
+      }
+
+      .checkbox-wrap input[type="checkbox"]:checked {
+        background: var(--teal);
+        border-color: var(--teal);
+      }
+
+      .checkbox-wrap input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 7px;
+        height: 11px;
+        border: 2.5px solid #fff;
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg);
+      }
+
+      .checkbox-wrap input[type="checkbox"]:focus-visible {
+        outline: 2px solid var(--orange);
+        outline-offset: 2px;
+      }
+
+      .checkbox-label {
+        font-size: 13.5px;
+        color: var(--text-muted);
+        line-height: 1.55;
+        user-select: none;
+      }
+
+      .checkbox-label strong {
+        color: var(--text-main);
+      }
+
+      /* Divider */
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 24px 0;
+      }
+
+      /* ============================================================
+       SUBMIT BUTTON
+    ============================================================ */
+      .btn-delete {
+        width: 100%;
+        padding: 16px 24px;
+        background: var(--orange);
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        box-shadow: var(--shadow-btn);
+        transition:
+          background var(--transition),
+          box-shadow var(--transition),
+          transform var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-delete:hover:not(:disabled) {
+        background: var(--orange-dark);
+        box-shadow: 0 6px 24px rgba(255, 119, 34, 0.38);
+        transform: translateY(-1px);
+      }
+
+      .btn-delete:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255, 119, 34, 0.25);
+      }
+
+      .btn-delete:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Ripple */
+      .btn-delete .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(0);
+        animation: ripple 0.5s linear;
+        pointer-events: none;
+      }
+      @keyframes ripple {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+
+      /* Spinner */
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2.5px solid rgba(255, 255, 255, 0.35);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: none;
+      }
+      .btn-delete.loading .spinner {
+        display: block;
+      }
+      .btn-delete.loading .btn-text {
+        opacity: 0.7;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ============================================================
+       MODAL OVERLAY
+    ============================================================ */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 28, 32, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.28s ease;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .modal {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 40px 36px;
+        max-width: 440px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        transform: scale(0.92) translateY(12px);
+        transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .modal-overlay.active .modal {
+        transform: scale(1) translateY(0);
+      }
+
+      .modal-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 28px;
+      }
+
+      .modal-icon.success {
+        background: #eafaf0;
+        color: var(--success-green);
+        border: 2px solid #b7efcc;
+      }
+
+      .modal-icon.error {
+        background: #fff0ef;
+        color: var(--error-red);
+        border: 2px solid #ffc9c6;
+      }
+
+      .modal-title {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 12px;
+      }
+
+      .modal-msg {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.65;
+        margin-bottom: 28px;
+      }
+
+      .modal-close {
+        padding: 12px 32px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background var(--transition),
+          color var(--transition);
+      }
+
+      .modal-close.teal {
+        background: var(--teal);
+        color: var(--white);
+        border: none;
+      }
+      .modal-close.teal:hover {
+        background: var(--teal-light);
+      }
+
+      .modal-close.outline {
+        background: transparent;
+        color: var(--teal);
+        border: 1.5px solid var(--border);
+      }
+      .modal-close.outline:hover {
+        background: var(--bg);
+      }
+
+      /* ============================================================
+       FOOTER
+    ============================================================ */
+      .site-footer {
+        width: 100%;
+        background: var(--teal-dark);
+        color: rgba(255, 255, 255, 0.6);
+        padding: 36px 24px;
+        text-align: center;
+        margin-top: auto;
+      }
+
+      .footer-brand {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--white);
+        margin-bottom: 6px;
+      }
+
+      .footer-tagline {
+        font-size: 13px;
+        margin-bottom: 18px;
+        max-width: 420px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 20px;
+        margin-bottom: 18px;
+      }
+
+      .footer-links a {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.65);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: color var(--transition);
+      }
+
+      .footer-links a:hover {
+        color: var(--orange);
+      }
+
+      .footer-divider {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 16px auto;
+        max-width: 300px;
+      }
+
+      .footer-copy {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+      @media (max-width: 520px) {
+        .page-wrapper {
+          padding: 20px 12px 0;
+        }
+        .card-header {
+          padding: 32px 20px 28px;
+        }
+        .card-body {
+          padding: 24px 20px;
+        }
+        .logo-img,
+        .logo-fallback {
+          width: 68px;
+          height: 68px;
+        }
+        .modal {
+          padding: 32px 22px;
+        }
+      }
+
+      /* ============================================================
+       REDUCED MOTION
+    ============================================================ */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ============================================================
+       PAGE WRAPPER
+  ============================================================ -->
+    <main class="page-wrapper" id="main">
+      <article class="card" role="main" aria-label="Account Deletion Form">
+        <!-- ========== HEADER ========== -->
+        <header class="card-header">
+          <!-- Logo -->
+          <div class="logo-wrap" aria-hidden="true">
+            <!--
+            Replace the src below with your actual GBN logo URL.
+            The fallback text (GBN) shows if the image fails to load.
+          -->
+            <img
+              class="logo-img"
+              src="https://gbnsocialassociations.in/logo.png"
+              alt="GBN Logo"
+              id="logoImg"
+              onerror="
+                this.style.display = 'none';
+                document.getElementById('logoFallback').style.display = 'flex';
+              "
+            />
+            <div
+              class="logo-fallback"
+              id="logoFallback"
+              style="display: none"
+              aria-hidden="true"
+            >
+              GBN
+            </div>
+          </div>
+
+          <!-- App name -->
+          <p class="app-name">GBN (Grow Business Network)</p>
+
+          <!-- Danger badge -->
+          <div class="danger-badge" role="alert">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            Permanent Action
+          </div>
+
+          <!-- Title & subtitle -->
+          <h1 class="header-title">Delete Your GBN Account</h1>
+          <p class="header-sub">
+            You can permanently delete your GBN account and associated
+            information by submitting a deletion request below.
+          </p>
+        </header>
+
+        <!-- ========== BODY ========== -->
+        <section class="card-body">
+          <!-- INFO BOX -->
+          <div
+            class="info-box"
+            role="note"
+            aria-label="Account deletion information"
+          >
+            <p class="info-box-title">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              When you delete your account
+            </p>
+            <ul class="info-list" aria-label="What gets deleted">
+              <li>
+                <i
+                  class="fa-solid fa-circle bullet-icon"
+                  aria-hidden="true"
+                ></i>
+                <span
+                  >Your profile information will be permanently deleted.</span
+                >
+              </li>
+              <li>
+                <i
+                  class="fa-solid fa-circle bullet-icon"
+                  aria-hidden="true"
+                ></i>
+                <span>Your company profile information will be deleted.</span>
+              </li>
+              <li>
+                <i
+                  class="fa-solid fa-circle bullet-icon"
+                  aria-hidden="true"
+                ></i>
+                <span
+                  >Uploaded profile pictures and company images will be
+                  removed.</span
+                >
+              </li>
+              <li>
+                <i
+                  class="fa-solid fa-circle bullet-icon"
+                  aria-hidden="true"
+                ></i>
+                <span>Access to your account will be permanently revoked.</span>
+              </li>
+              <li>
+                <i
+                  class="fa-solid fa-circle bullet-icon"
+                  aria-hidden="true"
+                ></i>
+                <span
+                  >Certain information may be retained only if required for
+                  legal, security, or regulatory purposes.</span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <!-- WARNING BOX -->
+          <div class="warning-box" role="alert">
+            <i class="fa-solid fa-ban" aria-hidden="true"></i>
+            <p>Account deletion is permanent and cannot be undone.</p>
+          </div>
+
+          <!-- FORM -->
+          <form
+            id="deletionForm"
+            novalidate
+            aria-label="Account deletion request form"
+          >
+            <p class="form-section-label">Your account details</p>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label class="form-label" for="emailInput">
+                Email Address <span class="req" aria-label="required">*</span>
+              </label>
+              <div class="input-wrap">
+                <i
+                  class="fa-solid fa-envelope input-icon"
+                  aria-hidden="true"
+                ></i>
+                <input
+                  type="email"
+                  id="emailInput"
+                  class="form-input"
+                  placeholder="Enter your registered email address"
+                  autocomplete="email"
+                  inputmode="email"
+                  aria-describedby="emailError"
+                  aria-required="true"
+                />
+              </div>
+              <p
+                class="field-error"
+                id="emailError"
+                role="alert"
+                aria-live="polite"
+              >
+                <i
+                  class="fa-solid fa-circle-exclamation"
+                  aria-hidden="true"
+                ></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Mobile -->
+            <div class="form-group">
+              <label class="form-label" for="mobileInput">
+                Mobile Number <span class="req" aria-label="required">*</span>
+              </label>
+              <div class="input-wrap">
+                <i
+                  class="fa-solid fa-mobile-screen-button input-icon"
+                  aria-hidden="true"
+                ></i>
+                <input
+                  type="tel"
+                  id="mobileInput"
+                  class="form-input"
+                  placeholder="Enter your registered mobile number"
+                  autocomplete="tel"
+                  inputmode="numeric"
+                  maxlength="10"
+                  pattern="\d{10}"
+                  aria-describedby="mobileError"
+                  aria-required="true"
+                />
+              </div>
+              <p
+                class="field-error"
+                id="mobileError"
+                role="alert"
+                aria-live="polite"
+              >
+                <i
+                  class="fa-solid fa-circle-exclamation"
+                  aria-hidden="true"
+                ></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Reason for Deletion -->
+            <div class="form-group">
+              <label class="form-label" for="reasonInput">
+                Reason for Deletion
+                <span class="req" aria-label="required">*</span>
+              </label>
+              <div class="input-wrap">
+                <i
+                  class="fa-solid fa-comment-dots input-icon"
+                  aria-hidden="true"
+                  style="top: 18px; transform: none"
+                ></i>
+                <textarea
+                  id="reasonInput"
+                  class="form-input"
+                  placeholder="Please tell us why you are leaving..."
+                  rows="3"
+                  aria-describedby="reasonError"
+                  aria-required="true"
+                  style="padding-top: 13px; padding-bottom: 13px; resize: vertical"
+                ></textarea>
+              </div>
+              <p class="field-error" id="reasonError" role="alert" aria-live="polite">
+                <i
+                  class="fa-solid fa-circle-exclamation"
+                  aria-hidden="true"
+                ></i>
+                <span></span>
+              </p>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- Confirmation Checkbox -->
+            <label class="checkbox-wrap" for="confirmCheck">
+              <input
+                type="checkbox"
+                id="confirmCheck"
+                aria-describedby="checkError"
+                aria-required="true"
+              />
+              <span class="checkbox-label">
+                I understand that deleting my account is
+                <strong>permanent</strong> and cannot be reversed.
+              </span>
+            </label>
+            <p
+              class="field-error"
+              id="checkError"
+              role="alert"
+              aria-live="polite"
+              style="margin-top: -18px; margin-bottom: 18px"
+            >
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span></span>
+            </p>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              class="btn-delete"
+              id="submitBtn"
+              aria-describedby="submitBtn"
+            >
+              <span class="spinner" aria-hidden="true"></span>
+              <i class="fa-solid fa-trash-can btn-icon" aria-hidden="true"></i>
+              <span class="btn-text">Confirm Account Deletion</span>
+            </button>
+          </form>
+        </section>
+      </article>
+    </main>
+
+    <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+    <footer class="site-footer" role="contentinfo">
+      <p class="footer-brand">GBN (Grow Business Network)</p>
+      <p class="footer-tagline">
+        For assistance regarding account deletion, please contact our support
+        team.
+      </p>
+
+      <nav class="footer-links" aria-label="Support links">
+        <a href="mailto:gbnsocialassociation@gmail.com">
+          <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+          gbnsocialassociation@gmail.com
+        </a>
+        <a
+          href="https://sites.google.com/view/growbusinessnetwork/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          Privacy Policy
+        </a>
+      </nav>
+
+      <hr class="footer-divider" />
+      <p class="footer-copy">GBN (Grow Business Network)</p>
+    </footer>
+
+    <!-- ============================================================
+       SUCCESS MODAL
+  ============================================================ -->
+    <div
+      class="modal-overlay"
+      id="successModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="successTitle"
+      aria-describedby="successMsg"
+    >
+      <div class="modal">
+        <div class="modal-icon success" aria-hidden="true">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h2 class="modal-title" id="successTitle">
+          Deletion Request Submitted
+        </h2>
+        <p class="modal-msg" id="successMsg">
+          Your account deletion request has been received successfully. Our team
+          will process your request and your account will be permanently
+          removed.
+        </p>
+        <button class="modal-close teal" id="successClose">Close</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+       ERROR MODAL
+  ============================================================ -->
+    <div
+      class="modal-overlay"
+      id="errorModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="errorTitle"
+      aria-describedby="errorMsg"
+    >
+      <div class="modal">
+        <div class="modal-icon error" aria-hidden="true">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+        <h2 class="modal-title" id="errorTitle">Request Failed</h2>
+        <p class="modal-msg" id="errorMsg">
+          Something went wrong. Please try again.
+        </p>
+        <button class="modal-close outline" id="errorClose">Try Again</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+    <script>
+          /* ============================================================
+             UTILITY HELPERS
+          ============================================================ */
+
+          /**
+           * Validates a standard email address.
+           * @param {string} val
+           * @returns {boolean}
+           */
+          function isValidEmail(val) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim());
+          }
+
+          /**
+           * Validates a 10-digit mobile number (digits only).
+           * @param {string} val
+           * @returns {boolean}
+           */
+          function isValidMobile(val) {
+            return /^\d{10}$/.test(val.trim());
+          }
+
+          /**
+           * Shows a field-level error message.
+           * @param {HTMLInputElement} input
+           * @param {HTMLElement} errorEl
+           * @param {string} msg
+           */
+          function showFieldError(input, errorEl, msg) {
+            input.classList.add('is-error');
+            input.classList.remove('is-valid');
+            errorEl.querySelector('span').textContent = msg;
+            errorEl.classList.add('show');
+            input.setAttribute('aria-invalid', 'true');
+          }
+
+          /**
+           * Clears a field-level error.
+           * @param {HTMLInputElement} input
+           * @param {HTMLElement} errorEl
+           */
+          function clearFieldError(input, errorEl) {
+            input.classList.remove('is-error');
+            input.classList.add('is-valid');
+            errorEl.classList.remove('show');
+            input.setAttribute('aria-invalid', 'false');
+          }
+
+          /**
+           * Resets a field to its default (neutral) state.
+           * @param {HTMLInputElement} input
+           * @param {HTMLElement} errorEl
+           */
+          function resetField(input, errorEl) {
+            input.classList.remove('is-error', 'is-valid');
+            errorEl.classList.remove('show');
+            input.removeAttribute('aria-invalid');
+          }
+
+          /* ============================================================
+             MODAL MANAGEMENT
+          ============================================================ */
+
+          /**
+           * Opens a modal and traps focus inside it.
+           * @param {HTMLElement} overlay
+           */
+          function openModal(overlay) {
+            overlay.classList.add('active');
+            overlay.removeAttribute('aria-hidden');
+            // Focus the close button
+            const closeBtn = overlay.querySelector('button');
+            if (closeBtn) setTimeout(() => closeBtn.focus(), 320);
+          }
+
+          /**
+           * Closes a modal and returns focus to the submit button.
+           * @param {HTMLElement} overlay
+           */
+          function closeModal(overlay) {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.getElementById('submitBtn').focus();
+          }
+
+          /* ============================================================
+             RIPPLE EFFECT
+          ============================================================ */
+          function addRipple(btn, e) {
+            const existing = btn.querySelector('.ripple');
+            if (existing) existing.remove();
+
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top  - size / 2;
+
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+            btn.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
+          }
+
+          /* ============================================================
+             MOBILE NUMBER – RESTRICT TO DIGITS ONLY
+          ============================================================ */
+          const mobileInput = document.getElementById('mobileInput');
+
+          mobileInput.addEventListener('keydown', (e) => {
+            const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
+            if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) {
+              e.preventDefault();
+            }
+          });
+
+          mobileInput.addEventListener('input', () => {
+            mobileInput.value = mobileInput.value.replace(/\D/g, '').slice(0, 10);
+          });
+
+          /* ============================================================
+             INLINE VALIDATION ON BLUR
+          ============================================================ */
+          const emailInput  = document.getElementById('emailInput');
+          const emailError  = document.getElementById('emailError');
+          const mobileError = document.getElementById('mobileError');
+          const reasonInput = document.getElementById('reasonInput');
+          const confirmCheck = document.getElementById('confirmCheck');
+          const checkError  = document.getElementById('checkError');
+
+          emailInput.addEventListener('blur', () => {
+            const val = emailInput.value.trim();
+            if (!val) {
+              showFieldError(emailInput, emailError, 'Email address is required.');
+            } else if (!isValidEmail(val)) {
+              showFieldError(emailInput, emailError, 'Enter a valid email address (e.g. name@example.com).');
+            } else {
+              clearFieldError(emailInput, emailError);
+            }
+          });
+
+          emailInput.addEventListener('input', () => {
+            if (emailInput.classList.contains('is-error')) resetField(emailInput, emailError);
+          });
+
+          mobileInput.addEventListener('blur', () => {
+            const val = mobileInput.value.trim();
+            if (!val) {
+              showFieldError(mobileInput, mobileError, 'Mobile number is required.');
+            } else if (!isValidMobile(val)) {
+              showFieldError(mobileInput, mobileError, 'Enter a valid 10-digit mobile number.');
+            } else {
+              clearFieldError(mobileInput, mobileError);
+            }
+          });
+
+          mobileInput.addEventListener('input', () => {
+            if (mobileInput.classList.contains('is-error'))
+              resetField(mobileInput, mobileError);
+          });
+
+          reasonInput.addEventListener('input', () => {
+            if (reasonInput.classList.contains('is-error')) resetField(reasonInput, reasonError)
+          });
+
+          /* ============================================================
+             API CALL
+          ============================================================ */
+
+          /**
+           * Sends the deletion request to the API.
+           * Endpoint: PUT /api/users/delete-account
+           * @param {string} email
+           * @param {string} mobile
+           * @param {string} reason
+           * @returns {Promise<{ok: boolean, status: number, data: any}>}
+           */
+          async function submitDeletionRequest(email, mobile, reason) {
+            const response = await fetch(
+              'http://localhost:5001/api/member/request-deletion',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  email,
+                  mobile,
+                  reason,
+                }),
+              }
+            );
+
+          function getErrorMessage(status, data) {
+            if (status === 400) return data?.message || 'The submitted information is invalid. Please check your email and mobile number.';
+            if (status === 404) return 'No account was found matching the provided email and mobile number. Please verify your details.';
+            if (status === 409) return 'A deletion request for this account has already been submitted.';
+            if (status === 422) return data?.message || 'Please ensure your email and mobile number are registered with GBN.';
+            if (status >= 500) return 'Our servers are experiencing an issue. Please try again in a few minutes.';
+            return data?.message || 'Something went wrong. Please try again.';
+          }
+            return { ok: response.ok, status: response.status, data: await response.json() };
+          }
+
+          /* ============================================================
+             FORM SUBMIT
+          ============================================================ */
+          const form      = document.getElementById('deletionForm');
+          const submitBtn = document.getElementById('submitBtn');
+          const btnIcon   = submitBtn.querySelector('.btn-icon');
+
+          const successModal  = document.getElementById('successModal');
+          const errorModal    = document.getElementById('errorModal');
+          const errorMsgEl    = document.getElementById('errorMsg');
+          const errorTitleEl  = document.getElementById('errorTitle');
+
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email  = emailInput.value.trim();
+            const mobile = mobileInput.value.trim();
+            const reason = reasonInput.value.trim();
+            const agreed = confirmCheck.checked;
+
+            /* ----- Client-side validation ----- */
+            let hasError = false;
+
+            if (!email) {
+              showFieldError(emailInput, emailError, 'Email address is required.');
+              hasError = true;
+            } else if (!isValidEmail(email)) { 
+              showFieldError(emailInput, emailError, 'Enter a valid email address (e.g. name@example.com).');
+              hasError = true;
+            }
+
+            if (!mobile) {
+              showFieldError(mobileInput, mobileError, 'Mobile number is required.');
+              hasError = true;
+            } else if (!isValidMobile(mobile)) {
+              showFieldError(mobileInput, mobileError, 'Enter a valid 10-digit mobile number.');
+              hasError = true;
+            }
+
+            if (!reason) {
+              showFieldError(reasonInput, reasonError, 'Please provide a reason for deletion.');
+              hasError = true;
+            }
+
+            if (!agreed) {
+              checkError.querySelector('span').textContent = 'Please confirm that you understand this action is permanent.';
+              checkError.classList.add('show');
+              hasError = true;
+            } else {
+              checkError.classList.remove('show');
+            }
+
+            if (hasError) {
+              // Scroll to first error
+              const firstError = form.querySelector('.is-error');
+              if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+
+            /* ----- Loading state ----- */
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            if (btnIcon) btnIcon.style.display = 'none';
+            addRipple(submitBtn, e);
+
+            /* ----- API call ----- */
+            try {
+              const result = await submitDeletionRequest(email, mobile, reason);
+
+              if (result.ok) {
+                /* ---- Success ---- */
+                openModal(successModal);
+                form.reset();
+                resetField(emailInput,  emailError);
+                resetField(mobileInput, mobileError);
+                resetField(reasonInput, reasonError);
+              } else {
+                /* ---- Server error (non-2xx) ---- */
+                errorTitleEl.textContent = 'Request Failed';
+                errorMsgEl.textContent   = getErrorMessage(result.status, result.data);
+                openModal(errorModal);
+              }
+
+            } catch (networkErr) {
+              /* ---- Network / connectivity error ---- */
+              errorTitleEl.textContent = 'Connection Failed';
+              errorMsgEl.textContent   = 'Unable to reach the server. Please check your internet connection and try again.';
+              openModal(errorModal);
+            } finally {
+              /* ---- Reset button state ---- */
+              submitBtn.disabled = false;
+              submitBtn.classList.remove('loading');
+              if (btnIcon) btnIcon.style.display = '';
+            }
+          });
+
+          /* ============================================================
+             MODAL CLOSE HANDLERS
+          ============================================================ */
+          document.getElementById('successClose').addEventListener('click', () => closeModal(successModal));
+          document.getElementById('errorClose').addEventListener('click',   () => closeModal(errorModal));
+
+          // Close on overlay click
+          [successModal, errorModal].forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+              if (e.target === overlay) closeModal(overlay);
+            });
+          });
+
+          // Close on Escape key
+          document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (successModal.classList.contains('active')) closeModal(successModal);
+            if (errorModal.classList.contains('active'))   closeModal(errorModal);
+          });
+
+          /* ============================================================
+             INIT – mark modals as hidden from assistive tech initially
+          ============================================================ */
+          successModal.setAttribute('aria-hidden', 'true');
+          errorModal.setAttribute('aria-hidden', 'true');
+    </script>
+  </body>
+</html>

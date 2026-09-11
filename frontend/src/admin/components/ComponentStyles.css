@@ -302,6 +302,24 @@
   background: #1c3a63;
 }
 
+.status-badge.deleted {
+  background: #fbeae5;
+  color: #8a3322;
+}
+
+.status-badge.deleted::before {
+  background: #c9563a;
+}
+
+.status-badge.rejoined {
+  background: #e3efe9;
+  color: #245349;
+}
+
+.status-badge.rejoined::before {
+  background: #3d8a76;
+}
+
 /* ============================================
    USER AVATARS
    ============================================ */

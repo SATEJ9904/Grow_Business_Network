@@ -8,6 +8,7 @@ const User = require("../models/User");
 const Chapter = require("../models/Chapter");
 const AdminSession = require("../models/AdminSession");
 const Invoice = require("../models/Invoice");
+const DeletedRecord = require("../models/DeletedRecord");
 const userService = require("../services/userService");
 const activityService = require("../services/activityService");
 const {
@@ -421,6 +422,33 @@ const approveMember = async (req, res, next) => {
 
     // Approve user
     const approvedUser = await userService.approveUser(id);
+
+    // If this person previously deleted a GBN account and is now rejoining
+    // (registered fresh and got approved again), flag their old deletion
+    // record as "rejoined" instead of leaving it looking like a still-gone
+    // member. The record itself is never removed - it's a permanent audit
+    // trail, this just adds the rejoin outcome to it. Matched by email
+    // first (the more reliable identifier), falling back to mobile.
+    try {
+      const matchQuery = user.email
+        ? { email: user.email.toLowerCase(), status: "deleted" }
+        : { mobile: user.mobile, status: "deleted" };
+
+      if (user.email || user.mobile) {
+        await DeletedRecord.findOneAndUpdate(
+          matchQuery,
+          {
+            status: "rejoined",
+            rejoinedAt: new Date(),
+            rejoinedUserId: user._id,
+          },
+          { sort: { deletedAt: -1 } },
+        );
+      }
+    } catch (rejoinError) {
+      console.error("Deleted-record rejoin link error:", rejoinError.message);
+      // Never block approval over this bookkeeping step
+    }
 
     // Send approval email
     try {
@@ -1232,6 +1260,55 @@ const deleteChapter = async (req, res) => {
   }
 };
 
+/**
+ * Get deleted-account records (audit trail of permanently deleted members,
+ * including whether/when they later rejoined)
+ * GET /api/admin/deleted-records?page=1&limit=10&status=all&search=
+ */
+const getDeletedRecords = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const { status, search } = req.query;
+
+    const query = {};
+
+    if (status && ["deleted", "rejoined"].includes(status)) {
+      query.status = status;
+    }
+
+    if (search?.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      query.$or = [{ name: regex }, { email: regex }, { mobile: regex }, { companyName: regex }];
+    }
+
+    const [records, total] = await Promise.all([
+      DeletedRecord.find(query)
+        .sort({ deletedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      DeletedRecord.countDocuments(query),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Deleted records retrieved successfully",
+      data: records,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit) || 1,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   adminLogin,
   adminLogout,
@@ -1251,4 +1328,5 @@ module.exports = {
   getRecentActivities,
   updateChapter,
   deleteChapter,
+  getDeletedRecords,
 };

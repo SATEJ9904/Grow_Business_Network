@@ -54,12 +54,16 @@ const handleConfirmApprove = async () => {
   setIsSubmitting(true);
 
   try {
+    const token = Cookies.get('adminAccessToken');
     await axios.delete(
       `${API_BASE_URL}/member/delete-account`,
       {
         data: {
           email: actionUser.email,
           mobile: actionUser.mobile,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -76,14 +80,30 @@ const handleConfirmApprove = async () => {
   }
 };
 
-  // A simple reject function to remove the request flag (can be expanded later)
+  // The admin has decided to keep this member - clear the request flag on
+  // the backend so it stops showing up here, without touching the account.
   const handleReject = async (user) => {
-    // This would typically involve an API call to update the user's `deletionRequest` status.
-    // For now, we'll just show an alert and refresh.
-    alert(`Request for ${user.name} has been rejected (UI only).`);
-    // In a real scenario, you would make an API call here.
-    // e.g., await axios.post(`${API_BASE_URL}/member/reject-deletion/${user._id}`, ...);
-    fetchDeletionRequests();
+    if (!window.confirm(`Keep ${user.name}'s account and dismiss this deletion request?`)) {
+      return;
+    }
+
+    try {
+      const token = Cookies.get('adminAccessToken');
+      await axios.put(
+        `${API_BASE_URL}/member/request-deletion/${user._id}/reject`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      fetchDeletionRequests();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to reject the deletion request.');
+      console.error('Reject Deletion Error:', err);
+    }
   };
 
   if (loading) {

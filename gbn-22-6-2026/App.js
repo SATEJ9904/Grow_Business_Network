@@ -26,6 +26,7 @@ import VerifyResetOTPScreen from './Components/Screens/VerifyResetOTPScreen';
 import MeetingsScreen from './Components/Screens/MeetingsScreen';
 import NotificationsScreen from './Components/Screens/NotificationsScreen';
 import SecuritySettingsScreen from './Components/Screens/SecuritySettingsScreen';
+import DeleteAccountScreen from './Components/Screens/DeleteAccountScreen';
 import ErrorBoundary from './Components/ErrorBoundary';
 import PrivacyScreen from './Components/PrivacyScreen';
 import MeetingPopup from './Components/MeetingPopup';
@@ -175,6 +176,10 @@ export default function App() {
               <Stack.Screen
                 name="SecuritySettingsScreen"
                 component={SecuritySettingsScreen}
+              />
+              <Stack.Screen
+                name="DeleteAccountScreen"
+                component={DeleteAccountScreen}
               />
             </Stack.Navigator>
           </NavigationContainer>

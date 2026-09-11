@@ -4,6 +4,7 @@
  */
 
 const User = require("../models/User");
+const DeletedRecord = require("../models/DeletedRecord");
 const userService = require("../services/userService");
 const { sendMemberProfileUpdatedEmail } = require("../services/emailService");
 
@@ -360,7 +361,7 @@ const deleteAccountByEmail = async (req, res) => {
     const user = await User.findOne({
       email: email.toLowerCase().trim(),
       mobile: mobile.trim(),
-    });
+    }).populate("chapterId", "name");
 
     if (!user) {
       return res.status(404).json({
@@ -368,6 +369,24 @@ const deleteAccountByEmail = async (req, res) => {
         message: "No account found with the provided email and mobile number",
       });
     }
+
+    // Snapshot the account into the permanent deleted-records audit trail
+    // before the User document itself is removed - this is the only place
+    // this data survives, and it's what powers the "Deleted Accounts" tab
+    // (and the rejoin tracking below) on the admin panel.
+    await DeletedRecord.create({
+      originalUserId: user._id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      companyName: user.companyName,
+      chapterName: user.chapterId?.name || "",
+      city: user.city,
+      profileImage: user.profileImage,
+      deletionReason: user.deletionRequest?.reason || "",
+      deletedAt: new Date(),
+      deletedBy: req.user?._id || null,
+    });
 
     // Permanently delete user
     await User.findByIdAndDelete(user._id);
@@ -466,6 +485,50 @@ const getDeletionRequests = async (req, res) => {
   }
 };
 
+/**
+ * Reject an account deletion request - the admin has decided to keep this
+ * member. Clears the request flag so it stops showing up as pending; the
+ * account itself is left completely untouched.
+ * PUT /api/member/request-deletion/:userId/reject
+ */
+const rejectDeletionRequest = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found",
+      });
+    }
+
+    if (!user.deletionRequest?.requested) {
+      return res.status(400).json({
+        success: false,
+        message: "This member has no pending deletion request",
+      });
+    }
+
+    user.deletionRequest = {
+      requested: false,
+      reason: "",
+      requestedAt: null,
+    };
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Deletion request rejected. The member's account has been kept.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getProfile,
@@ -478,5 +541,6 @@ module.exports = {
   deleteAccountByEmail,
   requestDeletion,
   getDeletionRequests,
+  rejectDeletionRequest,
   searchMembers,
 };

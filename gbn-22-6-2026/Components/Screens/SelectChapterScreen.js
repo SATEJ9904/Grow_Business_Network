@@ -198,6 +198,11 @@ const SelectChapterScreen = ({ navigation }) => {
     navigation.navigate('SecuritySettingsScreen');
   });
 
+  const guardedGoDeleteAccount = useGuardedAction(() => {
+    closeSidebar();
+    navigation.navigate('DeleteAccountScreen');
+  });
+
   const renderChapter = ({ item }) => (
     <Animated.View
       style={{
@@ -450,6 +455,24 @@ const SelectChapterScreen = ({ navigation }) => {
                 <Text style={styles.cardTitle}>Security</Text>
 
                 <Text style={styles.cardSub}>Biometric login settings</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* DELETE ACCOUNT */}
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.dangerCard}
+              onPress={guardedGoDeleteAccount}
+            >
+              <View style={styles.dangerIconBox}>
+                <Text style={styles.iconText}>⚠️</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.dangerCardTitle}>Delete Account</Text>
+
+                <Text style={styles.dangerCardSub}>Permanently remove your account</Text>
               </View>
             </TouchableOpacity>
 
@@ -903,6 +926,40 @@ dropdown: {
 
   cardSub: {
     color: '#9FB1A7',
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  dangerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(225,29,29,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(225,29,29,0.18)',
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 14,
+  },
+
+  dangerIconBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: 'rgba(225,29,29,0.14)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+
+  dangerCardTitle: {
+    color: '#FF8A8A',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  dangerCardSub: {
+    color: '#D99FA0',
     marginTop: 4,
     fontSize: 12,
     fontWeight: '500',

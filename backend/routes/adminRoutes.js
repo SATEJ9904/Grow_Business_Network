@@ -23,8 +23,9 @@ const {
   getDashboardStats,
   getActivities,
   getRecentActivities,
-  updateChapter,   
-  deleteChapter,   
+  updateChapter,
+  deleteChapter,
+  getDeletedRecords,
 } = require('../controllers/adminController');
 
 const { authMiddleware } = require('../middleware/authMiddleware');
@@ -314,6 +315,14 @@ router.get('/invoice/user/:userId', authMiddleware, adminMiddleware, getUserInvo
  * Sends approval email to member
  */
 router.post('/approve/:id', authMiddleware, adminMiddleware, approveMember);
+
+/**
+ * Get deleted-account records (audit trail of permanently deleted members,
+ * including whether/when they later rejoined)
+ * GET /api/admin/deleted-records?page=1&limit=10&status=deleted|rejoined&search=
+ * Headers: Authorization: Bearer {accessToken}
+ */
+router.get('/deleted-records', authMiddleware, adminMiddleware, getDeletedRecords);
 
 /**
  * Reject member account

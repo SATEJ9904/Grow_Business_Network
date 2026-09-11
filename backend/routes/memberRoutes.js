@@ -12,10 +12,12 @@ const {
   deleteAccountByEmail,
   requestDeletion,
   getDeletionRequests,
+  rejectDeletionRequest,
   searchMembers,
 } = require("../controllers/memberController");
 
 const { authMiddleware } = require("../middleware/authMiddleware");
+const { adminMiddleware } = require("../middleware/adminMiddleware");
 const {
   uploadMiddleware,
   handleUploadError,
@@ -81,19 +83,52 @@ router.put("/recover/:id", recoverAccount);
  */
 router.delete("/permanent/:id", permanentDelete);
 
+/**
+ * Permanently delete a member's account - only an admin may action a
+ * pending deletion request.
+ * DELETE /api/member/delete-account
+ * Headers: Authorization: Bearer {adminAccessToken}
+ */
 router.delete(
   "/delete-account",
+  authMiddleware,
+  adminMiddleware,
   deleteAccountByEmail
 );
 
+/**
+ * Submit an account deletion request (public - the member may not be
+ * logged in when they do this from the support site).
+ * POST /api/member/request-deletion
+ */
 router.post(
   "/request-deletion",
   requestDeletion
 );
-  
+
+/**
+ * List pending account deletion requests - admin only.
+ * GET /api/member/request-deletion
+ * Headers: Authorization: Bearer {adminAccessToken}
+ */
 router.get(
   "/request-deletion",
+  authMiddleware,
+  adminMiddleware,
   getDeletionRequests
+);
+
+/**
+ * Reject a pending deletion request - the admin has decided to keep this
+ * member's account. Admin only.
+ * PUT /api/member/request-deletion/:userId/reject
+ * Headers: Authorization: Bearer {adminAccessToken}
+ */
+router.put(
+  "/request-deletion/:userId/reject",
+  authMiddleware,
+  adminMiddleware,
+  rejectDeletionRequest
 );
 
 /**
