@@ -536,6 +536,270 @@ const sendMeetingBookingConfirmationEmail = async (email, memberName, meeting, b
   });
 };
 
+/**
+ * Send Report/Block-Request Rejected Email
+ * @param {string} email - Reporter's email
+ * @param {string} reporterName - Reporter's name
+ * @param {string} caseId - Reference case ID
+ * @param {string} rejectionReason - Admin-provided reason
+ * @returns {Promise<Object>} Email send response
+ */
+const sendReportRejectedEmail = async (email, reporterName, caseId, rejectionReason = "") => {
+  const subject = "Update regarding your GBN moderation request";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #6c757d; margin: 15px 0; }
+          .reference { background-color: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; margin: 15px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Moderation Request Update</h2>
+          </div>
+          <p class="message">Hello ${reporterName},</p>
+          <p class="message">We have reviewed the moderation request you submitted. After reviewing the available information, our moderation team has decided not to take enforcement action at this time.</p>
+          ${rejectionReason ? `<div class="reason"><strong>Reason:</strong> ${rejectionReason}</div>` : ""}
+          <div class="reference">Reference ID: ${caseId}</div>
+          <p class="message">If you believe additional information is relevant, you may submit a new report with supporting details.</p>
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
+/**
+ * Send Moderation Warning Email
+ * @param {string} email - Member's email
+ * @param {string} memberName - Member's name
+ * @param {string} reason - Reason for the warning
+ * @returns {Promise<Object>} Email send response
+ */
+const sendModerationWarningEmail = async (email, memberName, reason = "") => {
+  const subject = "Important: GBN Community Guidelines Notice";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .warning-message { background-color: #fff3cd; padding: 15px; border-radius: 5px; color: #856404; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #f59e0b; margin: 15px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Community Guidelines Notice</h2>
+          </div>
+          <div class="warning-message">
+            <strong>Your account has received a warning.</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Our moderation team has reviewed a report concerning your account and determined that it violated GBN's community guidelines. No further action has been taken at this time, but repeated violations may lead to account restriction, suspension, or removal.</p>
+          ${reason ? `<div class="reason"><strong>Reason:</strong> ${reason}</div>` : ""}
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
+/**
+ * Send Account Restricted Email
+ */
+const sendAccountRestrictedEmail = async (email, memberName, reason = "") => {
+  const subject = "Your GBN account has been restricted";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .warning-message { background-color: #ffe8cc; padding: 15px; border-radius: 5px; color: #7a4a00; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #fd7e14; margin: 15px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Account Restricted</h2>
+          </div>
+          <div class="warning-message">
+            <strong>Your account has been restricted.</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Following a review by our moderation team, some features of your GBN account have been temporarily restricted due to a violation of our community guidelines.</p>
+          ${reason ? `<div class="reason"><strong>Reason:</strong> ${reason}</div>` : ""}
+          <p class="message">If you believe this is a mistake, please contact our support team.</p>
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
+/**
+ * Send Account Suspended Email
+ */
+const sendAccountSuspendedEmail = async (email, memberName, reason = "", suspensionEndsAt = null) => {
+  const subject = "Your GBN account has been suspended";
+  const endsAtText = suspensionEndsAt
+    ? new Date(suspensionEndsAt).toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" })
+    : "further notice";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .warning-message { background-color: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #dc3545; margin: 15px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Account Suspended</h2>
+          </div>
+          <div class="warning-message">
+            <strong>Your account has been suspended until ${endsAtText}.</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Following a review by our moderation team, your GBN account has been temporarily suspended due to a violation of our community guidelines. You will not be able to log in until the suspension period ends.</p>
+          ${reason ? `<div class="reason"><strong>Reason:</strong> ${reason}</div>` : ""}
+          <p class="message">If you believe this is a mistake, please contact our support team.</p>
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
+/**
+ * Send Suspension Lifted Email
+ */
+const sendSuspensionLiftedEmail = async (email, memberName) => {
+  const subject = "Your GBN account suspension has ended";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .success-message { background-color: #d4edda; padding: 15px; border-radius: 5px; color: #155724; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Suspension Ended</h2>
+          </div>
+          <div class="success-message">
+            <strong>Your account is active again.</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Your GBN account's suspension period has ended and you can now log in as normal. Please make sure to follow our community guidelines going forward.</p>
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
+/**
+ * Send Account Banned Email
+ */
+const sendAccountBannedEmail = async (email, memberName, reason = "") => {
+  const subject = "Your GBN account has been banned";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { text-align: center; color: #333; margin-bottom: 30px; }
+          .warning-message { background-color: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; margin-bottom: 20px; }
+          .message { color: #555; line-height: 1.6; margin-bottom: 20px; }
+          .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #dc3545; margin: 15px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Account Banned</h2>
+          </div>
+          <div class="warning-message">
+            <strong>Your account has been permanently banned.</strong>
+          </div>
+          <p class="message">Hello ${memberName},</p>
+          <p class="message">Following a review by our moderation team, your GBN account has been permanently banned due to a serious or repeated violation of our community guidelines. You will no longer be able to log in.</p>
+          ${reason ? `<div class="reason"><strong>Reason:</strong> ${reason}</div>` : ""}
+          <p class="message">If you believe this is a mistake, please contact our support team.</p>
+          <div class="footer">
+            <p>GBN Support Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html: htmlContent });
+};
+
 module.exports = {
   sendOTPEmail,
   sendApprovalEmail,
@@ -546,4 +810,10 @@ module.exports = {
   sendMemberProfileUpdatedEmail,
   sendInvoiceEmail,
   sendMeetingBookingConfirmationEmail,
+  sendReportRejectedEmail,
+  sendModerationWarningEmail,
+  sendAccountRestrictedEmail,
+  sendAccountSuspendedEmail,
+  sendSuspensionLiftedEmail,
+  sendAccountBannedEmail,
 };

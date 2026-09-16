@@ -61,9 +61,25 @@ const registerLimiter = rateLimit({
   },
 });
 
+// Rate limiter for report/block-request submissions
+const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit to 10 report/block-request submissions per hour per IP
+  message: "Too many reports submitted, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many reports submitted, please try again later",
+    });
+  },
+});
+
 module.exports = {
   apiLimiter,
   loginLimiter,
   otpLimiter,
   registerLimiter,
+  reportLimiter,
 };

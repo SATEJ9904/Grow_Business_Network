@@ -283,6 +283,9 @@ const verifySession = async (req, res, next) => {
 /**
  * Get pending members for approval
  * GET /api/admin/members?status=pending&page=1&limit=10
+ * `status` also accepts 'blocked' and 'banned', which filter on
+ * enforcementStatus (RESTRICTED/BANNED) instead of the member's approval
+ * status field - those two are independent of pending/approved/rejected.
  */
 const getPendingMembers = async (req, res, next) => {
   try {
@@ -290,19 +293,20 @@ const getPendingMembers = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 10;
     const status = req.query.status || "pending";
 
+    const filters = { role: "member" };
+    if (status === "blocked") {
+      filters.enforcementStatus = "RESTRICTED";
+    } else if (status === "banned") {
+      filters.enforcementStatus = "BANNED";
+    } else {
+      filters.status = status;
+    }
+
     // Debug logging
-    console.log("📋 Fetching members with filters:", {
-      page,
-      limit,
-      status,
-      role: "member",
-    });
+    console.log("📋 Fetching members with filters:", { page, limit, ...filters });
 
     // Get members
-    const result = await userService.getAllMembers(page, limit, {
-      status,
-      role: "member",
-    });
+    const result = await userService.getAllMembers(page, limit, filters);
 
     console.log(
       "📊 Found members:",
@@ -1208,16 +1212,17 @@ const checkUserStatus = async (req, res, next) => {
       });
     }
 
+    // This endpoint is intentionally unauthenticated (called right after
+    // registration, before the account has a login session/token), so it
+    // must never return anything sensitive for an arbitrary user id - only
+    // what the pending-approval screen actually needs to render.
     return res.status(200).json({
       success: true,
       message: "User status retrieved successfully",
       data: {
         id: user._id,
-        email: user.email,
         name: user.name,
         status: user.status,
-        role: user.role,
-        createdAt: user.createdAt,
       },
     });
   } catch (error) {

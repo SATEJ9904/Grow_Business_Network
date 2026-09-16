@@ -119,6 +119,9 @@ const checkStatus = async (req, res, next) => {
       });
     }
 
+    // Unauthenticated by design (a fallback lookup for a device that lost its
+    // stored userId before ever logging in) - must not leak anything beyond
+    // what the pending-approval screen needs, and never the account's role.
     return res.status(200).json({
       success: true,
       message: "User status retrieved successfully",
@@ -127,7 +130,6 @@ const checkStatus = async (req, res, next) => {
         email: user.email,
         name: user.name,
         status: user.status,
-        role: user.role,
       },
     });
   } catch (error) {
@@ -317,6 +319,43 @@ const login = async (req, res) => {
       });
     }
 
+    // Self-heal a time-boxed block/suspension whose window has already
+    // elapsed, so a still-blocked-looking account doesn't wrongly reject a
+    // login the moment it should have expired.
+    if (
+      (user.enforcementStatus === "RESTRICTED" || user.enforcementStatus === "SUSPENDED") &&
+      user.suspensionEndsAt &&
+      user.suspensionEndsAt <= new Date()
+    ) {
+      user.enforcementStatus = "ACTIVE";
+      user.suspensionEndsAt = null;
+      user.enforcementReason = "";
+      await user.save();
+    }
+
+    if (user.enforcementStatus === "BANNED") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been permanently banned. Contact admin for details.",
+        enforcementStatus: "BANNED",
+      });
+    }
+
+    if (user.enforcementStatus === "RESTRICTED") {
+      const blockStarted = !user.enforcementActionAt || user.enforcementActionAt <= new Date();
+      const blockStillActive = !user.suspensionEndsAt || user.suspensionEndsAt > new Date();
+      if (blockStarted && blockStillActive) {
+        return res.status(403).json({
+          success: false,
+          message: user.suspensionEndsAt
+            ? `Your account is blocked until ${user.suspensionEndsAt.toISOString()}. Contact admin for details.`
+            : "Your account has been blocked. Contact admin for details.",
+          enforcementStatus: "RESTRICTED",
+          suspensionEndsAt: user.suspensionEndsAt,
+        });
+      }
+    }
+
     // Compare password
     const isPasswordValid = await user.comparePassword(password);
 
@@ -389,6 +428,43 @@ const refreshToken = async (req, res, next) => {
         success: false,
         message: "Invalid refresh token",
       });
+    }
+
+    // Same enforcement gate as login() - a biometric/refresh-token login
+    // must not be able to bypass a block or ban that happened after the
+    // token was first issued.
+    if (
+      (user.enforcementStatus === "RESTRICTED" || user.enforcementStatus === "SUSPENDED") &&
+      user.suspensionEndsAt &&
+      user.suspensionEndsAt <= new Date()
+    ) {
+      user.enforcementStatus = "ACTIVE";
+      user.suspensionEndsAt = null;
+      user.enforcementReason = "";
+      await user.save();
+    }
+
+    if (user.enforcementStatus === "BANNED") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been permanently banned. Contact admin for details.",
+        enforcementStatus: "BANNED",
+      });
+    }
+
+    if (user.enforcementStatus === "RESTRICTED") {
+      const blockStarted = !user.enforcementActionAt || user.enforcementActionAt <= new Date();
+      const blockStillActive = !user.suspensionEndsAt || user.suspensionEndsAt > new Date();
+      if (blockStarted && blockStillActive) {
+        return res.status(403).json({
+          success: false,
+          message: user.suspensionEndsAt
+            ? `Your account is blocked until ${user.suspensionEndsAt.toISOString()}. Contact admin for details.`
+            : "Your account has been blocked. Contact admin for details.",
+          enforcementStatus: "RESTRICTED",
+          suspensionEndsAt: user.suspensionEndsAt,
+        });
+      }
     }
 
     // Generate new tokens

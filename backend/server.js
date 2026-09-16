@@ -12,6 +12,7 @@ const { initSocket } = require("./utils/socket");
 const cron = require("node-cron");
 const { cleanupExpiredOTPs } = require("./services/otpService");
 const { dispatchDueNotifications } = require("./services/notificationDispatchService");
+const { restoreExpiredSuspensions } = require("./services/moderationService");
 const os = require("os");
 
 // Function to get local IP address
@@ -80,6 +81,22 @@ const startServer = async () => {
     });
 
     console.log("✅ Notification dispatch cron job scheduled (every minute)");
+
+    /**
+     * Setup cron job to auto-restore accounts whose suspension has expired
+     * Runs every 5 minutes (authMiddleware also self-heals a suspended
+     * user's own account lazily on their next request; this sweep catches
+     * anyone who doesn't make a request and proactively emails them).
+     */
+    cron.schedule("*/5 * * * *", async () => {
+      try {
+        await restoreExpiredSuspensions();
+      } catch (error) {
+        console.error("❌ Suspension expiry cron job error:", error.message);
+      }
+    });
+
+    console.log("✅ Suspension expiry cron job scheduled (every 5 minutes)");
 
     return server;
   } catch (error) {

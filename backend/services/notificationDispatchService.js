@@ -37,7 +37,8 @@ const resolveTargetChapters = async ({ city, chapterIds }) => {
 };
 
 /**
- * Marks a notification "sent" and pushes it to every targeted chapter room.
+ * Marks a notification "sent" and pushes it to every targeted chapter room,
+ * or directly to the target member's own room for a direct message.
  * Safe to call for a notification that's already sent (no-op).
  */
 const dispatchNotification = async (notification) => {
@@ -49,9 +50,13 @@ const dispatchNotification = async (notification) => {
 
   try {
     const io = getIO();
-    notification.chapterIds.forEach((chapterId) => {
-      io.to(`chapter:${String(chapterId)}`).emit('notification:new', notification);
-    });
+    if (notification.targetUserId) {
+      io.to(`user:${String(notification.targetUserId)}`).emit('notification:new', notification);
+    } else {
+      notification.chapterIds.forEach((chapterId) => {
+        io.to(`chapter:${String(chapterId)}`).emit('notification:new', notification);
+      });
+    }
   } catch (error) {
     console.error('Socket emit failed (notification:new):', error.message);
   }

@@ -123,6 +123,10 @@ const getMemberList = async (req, res, next) => {
     if (status && ["pending", "approved", "rejected"].includes(status)) {
       filters.status = status;
     }
+    // Hide members the requesting (identified) caller has personally blocked
+    if (req.currentUser?.blockedUserIds?.length) {
+      filters._id = { $nin: req.currentUser.blockedUserIds };
+    }
 
     // Get members list
     const result = await userService.getAllMembers(page, limit, filters);
@@ -163,6 +167,15 @@ const getMemberById = async (req, res, next) => {
     // unapproved ones here: they can use the app fully themselves, but
     // their profile is never shown to other members.
     if (member.status !== "approved" || member.role === "demo") {
+      return res.status(403).json({
+        success: false,
+        message: "This member profile is not available",
+      });
+    }
+
+    // If the requesting (identified) caller has personally blocked this
+    // member, hide the profile from them exactly as if it didn't exist.
+    if (req.currentUser?.blockedUserIds?.some((blockedId) => String(blockedId) === String(id))) {
       return res.status(403).json({
         success: false,
         message: "This member profile is not available",
@@ -289,7 +302,7 @@ const searchMembers = async (req, res) => {
   try {
     const search = req.query.search || "";
 
-    const users = await User.find({
+    const query = {
       role: "member",
       status: "approved",
 
@@ -329,7 +342,14 @@ const searchMembers = async (req, res) => {
           },
         },
       ],
-    }).sort({ createdAt: -1 });
+    };
+
+    // Hide members the requesting (identified) caller has personally blocked
+    if (req.currentUser?.blockedUserIds?.length) {
+      query._id = { $nin: req.currentUser.blockedUserIds };
+    }
+
+    const users = await User.find(query).sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,

@@ -16,6 +16,7 @@ import {
   Alert,
   Modal,
   Dimensions,
+  TextInput,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -23,7 +24,21 @@ const PREVIEW_SIZE = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT * 0.7);
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Dropdown } from 'react-native-element-dropdown';
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
+
+const BLOCK_REASON_OPTIONS = [
+  { label: 'Harassment or bullying', value: 'HARASSMENT' },
+  { label: 'Spam', value: 'SPAM' },
+  { label: 'Scam or fraud', value: 'SCAM_FRAUD' },
+  { label: 'Fake or impersonation account', value: 'FAKE_PROFILE' },
+  { label: 'Impersonation of another business', value: 'IMPERSONATION' },
+  { label: 'Inappropriate or offensive content', value: 'INAPPROPRIATE_CONTENT' },
+  { label: 'Offensive image', value: 'OFFENSIVE_IMAGE' },
+  { label: 'Other', value: 'OTHER' },
+];
 import {
   useGuardedAction,
   useDelayedNotice,
@@ -37,7 +52,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const ProfileScreen = ({ route }) => {
+const ProfileScreen = ({ route, navigation }) => {
   const userId = route?.params?.user?._id;
 
   const [user, setUser] = useState({});
@@ -47,12 +62,29 @@ const ProfileScreen = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const showSlowNotice = useDelayedNotice(loading, 8000);
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const [actionMenuVisible, setActionMenuVisible] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [blockModalVisible, setBlockModalVisible] = useState(false);
+  const [blockReason, setBlockReason] = useState(null);
+  const [blockDescription, setBlockDescription] = useState('');
+  const [blockDescriptionError, setBlockDescriptionError] = useState('');
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
+  const [blockSubmitError, setBlockSubmitError] = useState('');
+
+  useEffect(() => {
+    AsyncStorage.getItem('userId').then(setCurrentUserId).catch(() => {});
+  }, []);
+
+  const isOwnProfile = !!currentUserId && !!userId && currentUserId === userId;
 
   // FETCH PROFILE API
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}member/${userId}`);
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await axios.get(`${BASE_URL}member/${userId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
 
       if (response.data.success) {
         const userData = response.data.data;
@@ -252,6 +284,80 @@ const ProfileScreen = ({ route }) => {
     250,
   );
 
+  const guardedGoBack = useGuardedAction(() => navigation?.goBack());
+  const guardedOpenActionMenu = useGuardedAction(() => setActionMenuVisible(true), 250);
+  const guardedCloseActionMenu = useGuardedAction(() => setActionMenuVisible(false), 250);
+
+  const goToReport = () => {
+    setActionMenuVisible(false);
+    navigation?.navigate('ReportUserScreen', {
+      reportedUserId: userId,
+      reportedUserName: user?.name,
+    });
+  };
+
+  const openBlockModal = () => {
+    setActionMenuVisible(false);
+    setBlockReason(null);
+    setBlockDescription('');
+    setBlockDescriptionError('');
+    setBlockSubmitError('');
+    setBlockModalVisible(true);
+  };
+
+  const submitBlock = async () => {
+    if (!blockReason) {
+      setBlockSubmitError('Please select a reason.');
+      return;
+    }
+    if (blockReason === 'OTHER' && !blockDescription.trim()) {
+      setBlockDescriptionError('Please describe the issue.');
+      return;
+    }
+
+    setBlockSubmitting(true);
+    setBlockSubmitError('');
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+
+      // No immediate action is taken here - this only files a case for our
+      // moderation team to review. The member is not hidden or restricted
+      // until an admin decides to act on it.
+      const response = await axios.post(
+        `${BASE_URL}moderation/block-request`,
+        {
+          reportedUserId: userId,
+          reportedContentType: 'USER',
+          reasonCategory: blockReason,
+          description: blockDescription.trim(),
+        },
+        {
+          timeout: 30000,
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      setBlockModalVisible(false);
+      const caseId = response?.data?.data?.caseId;
+      Alert.alert(
+        'Request Submitted',
+        caseId
+          ? `Our moderation team will review this and update you. Reference ID: ${caseId}`
+          : 'Our moderation team will review this and update you.',
+        [{ text: 'OK', onPress: () => navigation?.goBack() }],
+      );
+    } catch (error) {
+      setBlockSubmitError(getFriendlyErrorMessage(error));
+    } finally {
+      setBlockSubmitting(false);
+    }
+  };
+
+  const guardedGoToReport = useGuardedAction(goToReport, 300);
+  const guardedOpenBlockModal = useGuardedAction(openBlockModal, 300);
+  const guardedCloseBlockModal = useGuardedAction(() => setBlockModalVisible(false), 250);
+  const guardedSubmitBlock = useGuardedAction(submitBlock, 300);
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
@@ -292,6 +398,30 @@ const ProfileScreen = ({ route }) => {
           {/* DARK OVERLAY */}
 
           <View style={styles.overlay} />
+
+          {/* HEADER ROW */}
+
+          <View style={styles.profileHeaderRow}>
+            {navigation && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.headerIconBtn}
+                onPress={guardedGoBack}
+              >
+                <Icon name="chevron-back" size={22} color="#fff" />
+              </TouchableOpacity>
+            )}
+
+            {!isOwnProfile && navigation && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.menuIconBtn}
+                onPress={guardedOpenActionMenu}
+              >
+                <Icon name="ellipsis-vertical" size={20} color="#111827" />
+              </TouchableOpacity>
+            )}
+          </View>
 
           <View style={styles.profileWrapper}>
             <TouchableOpacity
@@ -352,6 +482,131 @@ const ProfileScreen = ({ route }) => {
             </TouchableOpacity>
           </Modal>
         )}
+
+        {/* ACTION MENU (Report / Block) */}
+
+        <Modal
+          visible={actionMenuVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={guardedCloseActionMenu}
+        >
+          <TouchableOpacity
+            style={styles.actionSheetBackdrop}
+            activeOpacity={1}
+            onPress={guardedCloseActionMenu}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.actionSheet}>
+              <View style={styles.actionSheetHandle} />
+
+              <TouchableOpacity
+                style={styles.actionSheetRow}
+                activeOpacity={0.8}
+                onPress={guardedGoToReport}
+              >
+                <Icon name="flag-outline" size={20} color="#111827" />
+                <Text style={styles.actionSheetRowText}>Report User</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionSheetRow}
+                activeOpacity={0.8}
+                onPress={guardedOpenBlockModal}
+              >
+                <Icon name="ban-outline" size={20} color="#B3261E" />
+                <Text style={[styles.actionSheetRowText, { color: '#B3261E' }]}>Block User</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionSheetCancel}
+                activeOpacity={0.8}
+                onPress={guardedCloseActionMenu}
+              >
+                <Text style={styles.actionSheetCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* BLOCK USER MODAL (with description, so admins understand why) */}
+
+        <Modal
+          visible={blockModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={guardedCloseBlockModal}
+        >
+          <TouchableOpacity
+            style={styles.actionSheetBackdrop}
+            activeOpacity={1}
+            onPress={guardedCloseBlockModal}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.actionSheet}>
+              <View style={styles.actionSheetHandle} />
+
+              <Text style={styles.blockModalTitle}>Request to block {user?.name || 'this member'}?</Text>
+              <Text style={styles.blockModalSubtitle}>
+                This won't block them right away. Tell us what happened and our moderation team
+                will review it and take the appropriate action.
+              </Text>
+
+              <Text style={styles.blockFieldLabel}>Reason</Text>
+              <Dropdown
+                style={styles.blockDropdown}
+                data={BLOCK_REASON_OPTIONS}
+                labelField="label"
+                valueField="value"
+                placeholder="Select a reason"
+                value={blockReason}
+                onChange={item => setBlockReason(item.value)}
+              />
+
+              <Text style={[styles.blockFieldLabel, { marginTop: 16 }]}>
+                Describe the problem{blockReason === 'OTHER' ? ' *' : ' (optional)'}
+              </Text>
+              <TextInput
+                placeholder="Add details that will help our team understand the issue..."
+                placeholderTextColor="#9CA3AF"
+                style={styles.blockTextArea}
+                multiline
+                numberOfLines={4}
+                value={blockDescription}
+                onChangeText={text => {
+                  setBlockDescription(text);
+                  if (blockDescriptionError) setBlockDescriptionError('');
+                }}
+              />
+              {!!blockDescriptionError && (
+                <Text style={styles.blockErrorText}>{blockDescriptionError}</Text>
+              )}
+              {!!blockSubmitError && <Text style={styles.blockErrorText}>{blockSubmitError}</Text>}
+
+              <TouchableOpacity
+                style={[
+                  styles.blockConfirmBtn,
+                  (!blockReason || blockSubmitting) && styles.blockButtonDisabled,
+                ]}
+                activeOpacity={0.9}
+                onPress={guardedSubmitBlock}
+                disabled={!blockReason || blockSubmitting}
+              >
+                {blockSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.blockConfirmBtnText}>Submit Request</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionSheetCancel}
+                activeOpacity={0.8}
+                onPress={guardedCloseBlockModal}
+              >
+                <Text style={styles.actionSheetCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
 
         {/* PROFILE CONTENT */}
 
@@ -650,6 +905,159 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 250,
     backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+
+  profileHeaderRow: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 2,
+  },
+
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  menuIconBtn: {
+    width: 34,
+    height: 44,
+    borderRadius: 17,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+
+  actionSheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+
+  actionSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 30,
+  },
+
+  actionSheetHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E5E7EB',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+
+  actionSheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+
+  actionSheetRowText: {
+    marginLeft: 14,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  actionSheetCancel: {
+    marginTop: 14,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+
+  actionSheetCancelText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+
+  blockModalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 6,
+  },
+
+  blockModalSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 18,
+  },
+
+  blockFieldLabel: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  blockDropdown: {
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E9E7',
+    backgroundColor: '#F8FAF9',
+    paddingHorizontal: 14,
+  },
+
+  blockTextArea: {
+    minHeight: 100,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E9E7',
+    backgroundColor: '#F8FAF9',
+    padding: 14,
+    fontSize: 14,
+    color: '#111827',
+    textAlignVertical: 'top',
+  },
+
+  blockErrorText: {
+    color: '#B3261E',
+    fontSize: 12.5,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+
+  blockConfirmBtn: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#B3261E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 18,
+  },
+
+  blockButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  blockConfirmBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
   },
 
   coverEditBtn: {

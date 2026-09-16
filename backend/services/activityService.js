@@ -186,6 +186,13 @@ const getActivityIcon = (activityType) => {
     DELETE_ACCOUNT: '🗑️',
     SESSION_EXPIRED: '⏱️',
     FAILED_LOGIN: '⚠️',
+    CASE_REJECTED: '🚫',
+    MODERATION_ACTION_BLOCK: '🔐',
+    MODERATION_ACTION_BAN: '⛔',
+    MODERATION_ACTION_MESSAGE: '💬',
+    MODERATION_ACTION_MANUAL: '📋',
+    ENFORCEMENT_CLEARED: '✅',
+    SUSPENSION_AUTO_RESTORED: '✅',
   };
   return iconMap[activityType] || '📝';
 };
@@ -206,6 +213,13 @@ const getActivityColor = (activityType) => {
     DELETE_ACCOUNT: 'dark-red',
     SESSION_EXPIRED: 'gray',
     FAILED_LOGIN: 'red',
+    CASE_REJECTED: 'red',
+    MODERATION_ACTION_BLOCK: 'orange',
+    MODERATION_ACTION_BAN: 'dark-red',
+    MODERATION_ACTION_MESSAGE: 'blue',
+    MODERATION_ACTION_MANUAL: 'gray',
+    ENFORCEMENT_CLEARED: 'green',
+    SUSPENSION_AUTO_RESTORED: 'green',
   };
   return colorMap[activityType] || 'gray';
 };

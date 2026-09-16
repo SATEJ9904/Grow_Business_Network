@@ -8,8 +8,6 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
-  PermissionsAndroid,
   StyleSheet,
   Dimensions,
   Animated,
@@ -177,17 +175,6 @@ const GenerateScreen = ({ navigation }) => {
     return headers;
   };
 
-  const requestPhotoPermission = async () => {
-    if (Platform.OS !== 'android') return true;
-
-    const permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-    const hasPermission = await PermissionsAndroid.check(permission);
-    if (hasPermission) return true;
-
-    const status = await PermissionsAndroid.request(permission);
-    return status === PermissionsAndroid.RESULTS.GRANTED;
-  };
-
   const optionPalettes = [
     { bg: '#eef2ff', border: '#c7d2fe', accent: '#4338ca', label: '#312e81' },
     { bg: '#fffbeb', border: '#fde68a', accent: '#f59e0b', label: '#713f12' },
@@ -199,16 +186,7 @@ const GenerateScreen = ({ navigation }) => {
   const getOptionCardStyle = index =>
     optionPalettes[index % optionPalettes.length];
 
-  const pickImage = async () => {
-    const hasPermission = await requestPhotoPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'Need photo access',
-        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
-      );
-      return;
-    }
-
+  const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
@@ -225,16 +203,7 @@ const GenerateScreen = ({ navigation }) => {
     });
   };
 
-  const pickHeroImage = async () => {
-    const hasPermission = await requestPhotoPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'Need photo access',
-        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
-      );
-      return;
-    }
-
+  const pickHeroImage = () => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
@@ -251,16 +220,7 @@ const GenerateScreen = ({ navigation }) => {
     });
   };
 
-  const pickServicesImage = async () => {
-    const hasPermission = await requestPhotoPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'Need photo access',
-        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
-      );
-      return;
-    }
-
+  const pickServicesImage = () => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
@@ -277,16 +237,7 @@ const GenerateScreen = ({ navigation }) => {
     });
   };
 
-  const pickAboutImage = async () => {
-    const hasPermission = await requestPhotoPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'Need photo access',
-        "I can't open your gallery without permission — enable photo access for GBN in Settings and try again.",
-      );
-      return;
-    }
-
+  const pickAboutImage = () => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {
@@ -337,9 +288,7 @@ const GenerateScreen = ({ navigation }) => {
     setServiceItems(prev => prev.filter((_, idx) => idx !== index));
   };
 
-  const pickServiceItemImage = async index => {
-    if (!(await requestPhotoPermission())) return;
-
+  const pickServiceItemImage = index => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, maxWidth: 1600, maxHeight: 1600, quality: 0.8 }, response => {
       if (response.didCancel) return;
       if (response.errorCode) {

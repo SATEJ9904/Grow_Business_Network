@@ -123,6 +123,35 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 1, // 1 = active, 0 = deleted
     },
+    enforcementStatus: {
+      type: String,
+      enum: ["ACTIVE", "RESTRICTED", "SUSPENDED", "BANNED"],
+      default: "ACTIVE",
+      index: true,
+    },
+    enforcementReason: {
+      type: String,
+      default: "",
+    },
+    enforcementActionAt: {
+      type: Date,
+      default: null,
+    },
+    enforcedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    suspensionEndsAt: {
+      type: Date,
+      default: null,
+    },
+    blockedUserIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isEmailVerified: {
       type: Boolean,
       default: false,

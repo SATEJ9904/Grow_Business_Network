@@ -14,6 +14,7 @@ const HIDDEN_ROUTES = new Set([
   'ResetPassword',
   'VerifyResetOTPScreen',
   'NotificationsScreen',
+  'ProfileScreen',
 ]);
 
 /**

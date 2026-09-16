@@ -149,12 +149,12 @@ const annotateNotification = (notification, seenIds) => ({
 const listNotificationsForMember = async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('chapterId');
-    if (!user?.chapterId) {
-      return res.status(200).json({ success: true, data: [] });
-    }
+
+    const audienceQuery = [{ targetUserId: req.userId }];
+    if (user?.chapterId) audienceQuery.push({ chapterIds: user.chapterId });
 
     const notifications = await Notification.find({
-      chapterIds: user.chapterId,
+      $or: audienceQuery,
       status: 'sent',
       isActive: true,
     }).sort({ sentAt: -1 });
@@ -184,12 +184,12 @@ const listNotificationsForMember = async (req, res) => {
 const listUnseenNotifications = async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('chapterId');
-    if (!user?.chapterId) {
-      return res.status(200).json({ success: true, data: [] });
-    }
+
+    const audienceQuery = [{ targetUserId: req.userId }];
+    if (user?.chapterId) audienceQuery.push({ chapterIds: user.chapterId });
 
     const notifications = await Notification.find({
-      chapterIds: user.chapterId,
+      $or: audienceQuery,
       status: 'sent',
       isActive: true,
       'seenBy.user': { $ne: req.userId },

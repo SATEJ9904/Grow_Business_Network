@@ -47,6 +47,14 @@ const notificationSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    // Set instead of chapterIds for a direct, single-member message (e.g. a
+    // moderation admin messaging the member a case was filed against) —
+    // visible only to that one user, regardless of chapter targeting.
+    targetUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     buttonLabel: {
       type: String,
       trim: true,

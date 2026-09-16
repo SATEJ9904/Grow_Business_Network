@@ -27,10 +27,14 @@ import MeetingsScreen from './Components/Screens/MeetingsScreen';
 import NotificationsScreen from './Components/Screens/NotificationsScreen';
 import SecuritySettingsScreen from './Components/Screens/SecuritySettingsScreen';
 import DeleteAccountScreen from './Components/Screens/DeleteAccountScreen';
+import ReportUserScreen from './Components/Screens/ReportUserScreen';
+import BlockedUsersScreen from './Components/Screens/BlockedUsersScreen';
+import MyReportsScreen from './Components/Screens/MyReportsScreen';
 import ErrorBoundary from './Components/ErrorBoundary';
 import PrivacyScreen from './Components/PrivacyScreen';
 import MeetingPopup from './Components/MeetingPopup';
 import NotificationBell from './Components/NotificationBell';
+import EnforcementStatusGate from './Components/EnforcementStatusGate';
 import { navigationRef } from './Components/utils/navigationRef';
 import { clearSession } from './Components/utils/session';
 import { isPaymentInFlight } from './Components/utils/paymentGuard';
@@ -39,7 +43,7 @@ import './Components/utils/authInterceptor';
 const Stack = createNativeStackNavigator();
 
 const BACKGROUNDED_AT_KEY = 'backgroundedAt';
-const SESSION_GRACE_MS = 30 * 60 * 1000; // keep the session alive across up to 30 min backgrounded
+const SESSION_GRACE_MS = 2 * 60 * 1000; // keep the session alive across up to 2 min backgrounded
 
 const linking = {
   prefixes: ['gbn://', 'https://api.gbnsocialassociations.in'],
@@ -94,12 +98,14 @@ export default function App() {
           const backgroundedAt = await AsyncStorage.getItem(BACKGROUNDED_AT_KEY);
           await AsyncStorage.removeItem(BACKGROUNDED_AT_KEY);
 
+          // Only a grace-period timeout forces the user back to Login. A
+          // quick trip backgrounded (photo picker, switching to the email
+          // app to copy an OTP, etc.) must never redirect on its own just
+          // because no accessToken exists yet — that's the normal state
+          // while mid-registration/login, and used to bounce people off
+          // Register/OTP screens the instant they came back.
           if (backgroundedAt && Date.now() - Number(backgroundedAt) > SESSION_GRACE_MS) {
             await clearSession();
-          }
-
-          const accessToken = await AsyncStorage.getItem('accessToken');
-          if (!accessToken) {
             navigationRef.current?.reset({
               index: 0,
               routes: [{ name: 'Login' }],
@@ -181,11 +187,24 @@ export default function App() {
                 name="DeleteAccountScreen"
                 component={DeleteAccountScreen}
               />
+              <Stack.Screen
+                name="ReportUserScreen"
+                component={ReportUserScreen}
+              />
+              <Stack.Screen
+                name="BlockedUsersScreen"
+                component={BlockedUsersScreen}
+              />
+              <Stack.Screen
+                name="MyReportsScreen"
+                component={MyReportsScreen}
+              />
             </Stack.Navigator>
           </NavigationContainer>
           <PrivacyScreen />
           <MeetingPopup currentRoute={currentRoute} />
           <NotificationBell currentRoute={currentRoute} />
+          <EnforcementStatusGate />
         </View>
       </SafeAreaProvider>
     </ErrorBoundary>

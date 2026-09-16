@@ -162,6 +162,31 @@ const Users = () => {
     }
   };
 
+  const handleRestoreMember = async (userId) => {
+    if (!window.confirm('Restore this member to active? They will be able to log in again.')) {
+      return;
+    }
+    try {
+      setActionLoading(true);
+      const token = Cookies.get('adminAccessToken');
+
+      const response = await axios.post(
+        `${apiBaseUrl}/admin/members/${userId}/restore`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (response.data.success) {
+        fetchUsers();
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to restore this member');
+      console.error('Restore error:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const openChapterModal = (user) => {
     setChapterUser(user);
     setSelectedChapterId(
@@ -302,6 +327,8 @@ const Users = () => {
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
+            <option value="blocked">Blocked</option>
+            <option value="banned">Banned</option>
           </select>
         </div>
 
@@ -354,6 +381,16 @@ const Users = () => {
                       <span className={`status-badge status-${user.status}`}>
                         {user.status?.charAt(0).toUpperCase() + user.status?.slice(1)}
                       </span>
+                      {user.enforcementStatus === 'RESTRICTED' && (
+                        <span className="status-badge status-pending" style={{ marginLeft: '6px' }}>
+                          Blocked{user.suspensionEndsAt ? ` until ${new Date(user.suspensionEndsAt).toLocaleDateString()}` : ' (permanent)'}
+                        </span>
+                      )}
+                      {user.enforcementStatus === 'BANNED' && (
+                        <span className="status-badge status-rejected" style={{ marginLeft: '6px' }}>
+                          Banned
+                        </span>
+                      )}
                     </td>
                     <td className="user-joined">
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -376,6 +413,16 @@ const Users = () => {
                           <Repeat size={18} />
                           Chapter
                         </button>
+                        {(user.enforcementStatus === 'RESTRICTED' || user.enforcementStatus === 'BANNED') && (
+                          <button
+                            onClick={() => handleRestoreMember(user._id)}
+                            className="btn-detail"
+                            disabled={actionLoading}
+                            title={user.enforcementStatus === 'BANNED' ? 'Unban this member' : 'Unblock this member'}
+                          >
+                            {user.enforcementStatus === 'BANNED' ? 'Unban' : 'Unblock'}
+                          </button>
+                        )}
                         {user.status === 'approved' && (
                           <button
                             onClick={() => {

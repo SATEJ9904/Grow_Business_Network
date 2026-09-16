@@ -73,7 +73,7 @@ const handleUploadError = (error, req, res, next) => {
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
         success: false,
-        message: "File size exceeds 2MB limit",
+        message: "File size exceeds the allowed limit",
       });
     }
     if (error.code === "LIMIT_FILE_COUNT") {

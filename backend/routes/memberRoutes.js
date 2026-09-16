@@ -18,6 +18,7 @@ const {
 
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { adminMiddleware } = require("../middleware/adminMiddleware");
+const { optionalAuthMiddleware } = require("../middleware/optionalAuthMiddleware");
 const {
   uploadMiddleware,
   handleUploadError,
@@ -56,13 +57,13 @@ router.put(
  *   - limit: items per page (default: 10)
  *   - status: filter by status (optional)
  */
-router.get("/list", getMemberList);
+router.get("/list", optionalAuthMiddleware, getMemberList);
 
 /**
  * Search members
  * GET /api/member/search?search=value
  */
-router.get("/search", searchMembers);
+router.get("/search", optionalAuthMiddleware, searchMembers);
 
 /**
  * Delete account (soft delete)
@@ -74,14 +75,16 @@ router.put("/delete/:id", authMiddleware, deleteAccount);
 /**
  * Recover account
  * PUT /api/member/recover/:id
+ * Headers: Authorization: Bearer {accessToken}
  */
-router.put("/recover/:id", recoverAccount);
+router.put("/recover/:id", authMiddleware, recoverAccount);
 
 /**
  * Permanent delete account
  * DELETE /api/member/permanent/:id
+ * Headers: Authorization: Bearer {accessToken}
  */
-router.delete("/permanent/:id", permanentDelete);
+router.delete("/permanent/:id", authMiddleware, permanentDelete);
 
 /**
  * Permanently delete a member's account - only an admin may action a
@@ -137,6 +140,6 @@ router.put(
  * Params: id - Member ID
  * Note: Only shows approved member profiles
  */
-router.get("/:id", getMemberById);
+router.get("/:id", optionalAuthMiddleware, getMemberById);
 
 module.exports = router;

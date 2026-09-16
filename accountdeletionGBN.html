@@ -1300,9 +1300,18 @@
            * @param {string} reason
            * @returns {Promise<{ok: boolean, status: number, data: any}>}
            */
+          function getErrorMessage(status, data) {
+            if (status === 400) return data?.message || 'The submitted information is invalid. Please check your email and mobile number.';
+            if (status === 404) return 'No account was found matching the provided email and mobile number. Please verify your details.';
+            if (status === 409) return 'A deletion request for this account has already been submitted.';
+            if (status === 422) return data?.message || 'Please ensure your email and mobile number are registered with GBN.';
+            if (status >= 500) return 'Our servers are experiencing an issue. Please try again in a few minutes.';
+            return data?.message || 'Something went wrong. Please try again.';
+          }
+
           async function submitDeletionRequest(email, mobile, reason) {
             const response = await fetch(
-              'http://localhost:5001/api/member/request-deletion',
+              'https://api.gbnsocialassociations.in/api/member/request-deletion',
               {
                 method: 'POST',
                 headers: {
@@ -1316,14 +1325,6 @@
               }
             );
 
-          function getErrorMessage(status, data) {
-            if (status === 400) return data?.message || 'The submitted information is invalid. Please check your email and mobile number.';
-            if (status === 404) return 'No account was found matching the provided email and mobile number. Please verify your details.';
-            if (status === 409) return 'A deletion request for this account has already been submitted.';
-            if (status === 422) return data?.message || 'Please ensure your email and mobile number are registered with GBN.';
-            if (status >= 500) return 'Our servers are experiencing an issue. Please try again in a few minutes.';
-            return data?.message || 'Something went wrong. Please try again.';
-          }
             return { ok: response.ok, status: response.status, data: await response.json() };
           }
 

@@ -15,6 +15,7 @@ import {
   UserX,
   Calendar,
   Bell,
+  Shield,
 } from "lucide-react";
 import DeletionRequests from "./components/DeletionRequests";
 import DashboardHome from "./components/DashboardHome";
@@ -27,6 +28,7 @@ import CreateMember from "./components/CreateMember";
 import Meetings from "./components/Meetings";
 import Notifications from "./components/Notifications";
 import DeletedRecords from "./components/DeletedRecords";
+import Moderation from "./components/Moderation";
 
 const AdminDashboard = ({ onLogout }) => {
   const [currentPage, setCurrentPage] = useState("home");
@@ -36,6 +38,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [sessionWarning, setSessionWarning] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingModerationCount, setPendingModerationCount] = useState(0);
 
   useEffect(() => {
     // Initialize admin info
@@ -50,16 +53,19 @@ const AdminDashboard = ({ onLogout }) => {
 
     // Fetch pending count immediately
     fetchPendingCount();
+    fetchPendingModerationCount();
 
     // Verify session periodically (every 30 seconds)
     const sessionCheckInterval = setInterval(verifySession, 30000);
 
     // Fetch pending count periodically
     const pendingCountInterval = setInterval(fetchPendingCount, 30000); // Every 30 seconds
+    const pendingModerationInterval = setInterval(fetchPendingModerationCount, 30000);
 
     return () => {
       clearInterval(sessionCheckInterval);
       clearInterval(pendingCountInterval);
+      clearInterval(pendingModerationInterval);
     };
   }, []);
 
@@ -139,6 +145,27 @@ const AdminDashboard = ({ onLogout }) => {
     }
   };
 
+  const fetchPendingModerationCount = async () => {
+    try {
+      const token = Cookies.get("adminAccessToken");
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/admin/moderation/stats`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.data.success && response.data.data) {
+        const count = (response.data.data.pending || 0) + (response.data.data.underReview || 0);
+        setPendingModerationCount(count);
+      }
+    } catch (error) {
+      console.error("Failed to fetch pending moderation count:", error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       const sessionId = Cookies.get("adminSessionId");
@@ -188,6 +215,7 @@ const AdminDashboard = ({ onLogout }) => {
     "deletion-requests": "Deletion Requests",
     "deleted-records": "Deleted Accounts",
     activities: "Activity Logs",
+    moderation: "Moderation",
   };
 
   const sidebarItems = [
@@ -249,6 +277,13 @@ const AdminDashboard = ({ onLogout }) => {
       id: "activities",
       label: "Activity Logs",
       icon: <Activity size={20} />,
+    },
+
+    {
+      id: "moderation",
+      label: "Moderation",
+      icon: <Shield size={20} />,
+      badge: pendingModerationCount > 0 ? pendingModerationCount : null,
     },
   ];
 
@@ -407,6 +442,11 @@ const AdminDashboard = ({ onLogout }) => {
           {currentPage === "activities" && (
             <div className="admin-page-container">
               <ActivityLogs />
+            </div>
+          )}
+          {currentPage === "moderation" && (
+            <div className="admin-page-container">
+              <Moderation />
             </div>
           )}
         </main>

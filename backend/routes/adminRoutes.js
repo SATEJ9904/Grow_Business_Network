@@ -28,6 +28,16 @@ const {
   getDeletedRecords,
 } = require('../controllers/adminController');
 
+const {
+  getCases,
+  getCaseDetail,
+  getModerationStats,
+  takeAction,
+  rejectCase,
+  closeCase,
+  restoreMember,
+} = require('../controllers/moderationController');
+
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { adminMiddleware } = require('../middleware/adminMiddleware');
 
@@ -441,6 +451,52 @@ router.delete(
   adminMiddleware,
   deleteChapter
 );
+
+/**
+ * ============================================
+ * MODERATION ROUTES (reports, block requests, enforcement)
+ * ============================================
+ */
+
+/**
+ * GET /api/admin/moderation/cases?page&limit&status&requestType&reasonCategory&search
+ */
+router.get('/moderation/cases', authMiddleware, adminMiddleware, getCases);
+
+/**
+ * GET /api/admin/moderation/cases/:id
+ */
+router.get('/moderation/cases/:id', authMiddleware, adminMiddleware, getCaseDetail);
+
+/**
+ * GET /api/admin/moderation/stats
+ */
+router.get('/moderation/stats', authMiddleware, adminMiddleware, getModerationStats);
+
+/**
+ * POST /api/admin/moderation/cases/:id/action
+ * Every case is decided by whichever admin opens it - there is no separate
+ * assignment step. Body: { enforcementAction: 'BLOCK'|'BAN'|'MESSAGE'|'MANUAL', messageText?, adminNotes? }
+ */
+router.post('/moderation/cases/:id/action', authMiddleware, adminMiddleware, takeAction);
+
+/**
+ * POST /api/admin/moderation/cases/:id/reject
+ * Body: { rejectionReason }
+ */
+router.post('/moderation/cases/:id/reject', authMiddleware, adminMiddleware, rejectCase);
+
+/**
+ * POST /api/admin/moderation/cases/:id/close
+ */
+router.post('/moderation/cases/:id/close', authMiddleware, adminMiddleware, closeCase);
+
+/**
+ * POST /api/admin/members/:id/restore
+ * Reverse action for the Users page's Unblock/Unban buttons - restores a
+ * blocked or banned member to ACTIVE.
+ */
+router.post('/members/:id/restore', authMiddleware, adminMiddleware, restoreMember);
 
 module.exports = router;
 

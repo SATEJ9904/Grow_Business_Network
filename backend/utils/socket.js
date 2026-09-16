@@ -6,6 +6,8 @@
  * Rooms:
  *   - `admin`               joined by any connected user with role 'admin'
  *   - `chapter:<chapterId>` joined by members, scoped to their own chapter
+ *   - `user:<userId>`       joined by every connected socket, for 1:1 delivery
+ *                           (e.g. moderation case/enforcement updates)
  */
 
 const { Server } = require('socket.io');
@@ -50,6 +52,8 @@ const initSocket = (httpServer) => {
     } else if (socket.chapterId) {
       socket.join(`chapter:${socket.chapterId}`);
     }
+    // Personal room for targeted delivery (e.g. moderation outcome updates)
+    socket.join(`user:${socket.userId}`);
   });
 
   return io;

@@ -63,6 +63,13 @@ const ActivityLogs = () => {
       DELETE_ACCOUNT: '🗑️',
       SESSION_EXPIRED: '⏱️',
       FAILED_LOGIN: '⚠️',
+      CASE_REJECTED: '🚫',
+      MODERATION_ACTION_BLOCK: '🔐',
+      MODERATION_ACTION_BAN: '⛔',
+      MODERATION_ACTION_MESSAGE: '💬',
+      MODERATION_ACTION_MANUAL: '📋',
+      ENFORCEMENT_CLEARED: '✅',
+      SUSPENSION_AUTO_RESTORED: '✅',
     };
     return iconMap[type] || '📝';
   };
@@ -80,6 +87,13 @@ const ActivityLogs = () => {
       DELETE_ACCOUNT: { bg: 'rgba(179, 67, 43, 0.12)', text: '#B3432B' },
       SESSION_EXPIRED: { bg: 'rgba(72, 84, 107, 0.12)', text: '#48546B' },
       FAILED_LOGIN: { bg: 'rgba(179, 67, 43, 0.12)', text: '#B3432B' },
+      CASE_REJECTED: { bg: 'rgba(179, 67, 43, 0.12)', text: '#B3432B' },
+      MODERATION_ACTION_BLOCK: { bg: 'rgba(184, 135, 74, 0.18)', text: '#8A5A1F' },
+      MODERATION_ACTION_BAN: { bg: 'rgba(179, 67, 43, 0.18)', text: '#8C2A17' },
+      MODERATION_ACTION_MESSAGE: { bg: 'rgba(28, 58, 99, 0.12)', text: '#1C3A63' },
+      MODERATION_ACTION_MANUAL: { bg: 'rgba(72, 84, 107, 0.12)', text: '#48546B' },
+      ENFORCEMENT_CLEARED: { bg: 'rgba(47, 111, 94, 0.12)', text: '#2F6F5E' },
+      SUSPENSION_AUTO_RESTORED: { bg: 'rgba(47, 111, 94, 0.12)', text: '#2F6F5E' },
     };
     return colorMap[type] || { bg: 'rgba(72, 84, 107, 0.12)', text: '#48546B' };
   };

@@ -37,7 +37,9 @@ const authMiddleware = async (req, res, next) => {
     const decoded = verifyAccessToken(token);
 
     // Re-check the account's current standing on every request, not just at login
-    const user = await User.findById(decoded.userId).select('status accountStatus role');
+    const user = await User.findById(decoded.userId).select(
+      'status accountStatus role enforcementStatus suspensionEndsAt enforcementReason enforcementActionAt',
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -60,10 +62,60 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    if (user.enforcementStatus === 'BANNED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been banned. Contact admin for details.',
+        enforcementStatus: 'BANNED',
+      });
+    }
+
+    if (user.enforcementStatus === 'SUSPENDED') {
+      if (user.suspensionEndsAt && user.suspensionEndsAt <= new Date()) {
+        // Suspension window has already elapsed but the periodic sweep hasn't
+        // caught it yet - self-heal now rather than block this request.
+        user.enforcementStatus = 'ACTIVE';
+        user.suspensionEndsAt = null;
+        user.enforcementReason = '';
+        await user.save();
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: `Your account is suspended until ${user.suspensionEndsAt?.toISOString()}.`,
+          enforcementStatus: 'SUSPENDED',
+          suspensionEndsAt: user.suspensionEndsAt,
+        });
+      }
+    }
+
+    if (user.enforcementStatus === 'RESTRICTED') {
+      const blockStarted = !user.enforcementActionAt || user.enforcementActionAt <= new Date();
+      const blockExpired = user.suspensionEndsAt && user.suspensionEndsAt <= new Date();
+
+      if (blockExpired) {
+        // Block window has already elapsed but the periodic sweep hasn't
+        // caught it yet - self-heal now rather than block this request.
+        user.enforcementStatus = 'ACTIVE';
+        user.suspensionEndsAt = null;
+        user.enforcementReason = '';
+        await user.save();
+      } else if (blockStarted) {
+        return res.status(403).json({
+          success: false,
+          message: user.suspensionEndsAt
+            ? `Your account is blocked until ${user.suspensionEndsAt.toISOString()}.`
+            : 'Your account has been blocked. Contact admin for details.',
+          enforcementStatus: 'RESTRICTED',
+          suspensionEndsAt: user.suspensionEndsAt,
+        });
+      }
+    }
+
     // Attach user info to request
     req.userId = decoded.userId;
     req.userRole = user.role;
     req.userStatus = user.status;
+    req.userEnforcementStatus = user.enforcementStatus;
     next();
   } catch (error) {
     return res.status(403).json({

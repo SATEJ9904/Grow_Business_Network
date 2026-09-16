@@ -203,6 +203,16 @@ const SelectChapterScreen = ({ navigation }) => {
     navigation.navigate('DeleteAccountScreen');
   });
 
+  const guardedGoMyReports = useGuardedAction(() => {
+    closeSidebar();
+    navigation.navigate('MyReportsScreen');
+  });
+
+  const guardedGoBlockedUsers = useGuardedAction(() => {
+    closeSidebar();
+    navigation.navigate('BlockedUsersScreen');
+  });
+
   const renderChapter = ({ item }) => (
     <Animated.View
       style={{
@@ -455,6 +465,42 @@ const SelectChapterScreen = ({ navigation }) => {
                 <Text style={styles.cardTitle}>Security</Text>
 
                 <Text style={styles.cardSub}>Biometric login settings</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* MY REPORTS */}
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.sidebarCard}
+              onPress={guardedGoMyReports}
+            >
+              <View style={styles.iconBox}>
+                <Text style={styles.iconText}>🚩</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>My Reports</Text>
+
+                <Text style={styles.cardSub}>Track reports you've submitted</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* BLOCKED USERS */}
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.sidebarCard}
+              onPress={guardedGoBlockedUsers}
+            >
+              <View style={styles.iconBox}>
+                <Text style={styles.iconText}>🚫</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>Blocked Users</Text>
+
+                <Text style={styles.cardSub}>Manage members you've blocked</Text>
               </View>
             </TouchableOpacity>
 
