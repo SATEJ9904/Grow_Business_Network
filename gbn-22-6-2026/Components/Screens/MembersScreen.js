@@ -11,18 +11,17 @@ import {
   ActivityIndicator,
   TextInput,
   Animated,
-  Dimensions,
   Linking,
   Alert,
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import {
   useGuardedAction,
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const MembersScreen = ({ navigation, route }) => {
   const { chapterId, chapterName } = route.params;
@@ -265,6 +264,7 @@ const MembersScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#041109" barStyle="light-content" />
 
+      <KeyboardScreen>
       {/* ================= HEADER ================= */}
 
       <View style={styles.header}>
@@ -327,6 +327,7 @@ const MembersScreen = ({ navigation, route }) => {
         </View>
       ) : filteredMembers.length > 0 ? (
         <FlatList
+          style={{ flex: 1 }}
           data={filteredMembers}
           renderItem={renderMember}
           keyExtractor={item => item._id}
@@ -344,6 +345,7 @@ const MembersScreen = ({ navigation, route }) => {
           </Text>
         </View>
       )}
+      </KeyboardScreen>
     </View>
   );
 };

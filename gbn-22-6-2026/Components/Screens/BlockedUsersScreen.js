@@ -117,6 +117,7 @@ export default function BlockedUsersScreen({ navigation }) {
         <ActivityIndicator size="large" color="#17310F" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={blockedUsers}
           keyExtractor={item => item._id}
           renderItem={renderItem}

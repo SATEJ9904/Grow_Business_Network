@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Dropdown } from 'react-native-element-dropdown';
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const STEP_REASON = 'reason';
 const STEP_DETAILS = 'details';
@@ -127,7 +128,8 @@ export default function ReportUserScreen({ route, navigation }) {
     <View style={styles.container}>
       <StatusBar backgroundColor="#17310F" barStyle="light-content" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+      <KeyboardScreen>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity activeOpacity={0.9} style={styles.backButton} onPress={guardedBackStep}>
@@ -279,6 +281,7 @@ export default function ReportUserScreen({ route, navigation }) {
           )}
         </View>
       </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 }

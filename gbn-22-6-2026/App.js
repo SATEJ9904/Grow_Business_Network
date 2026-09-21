@@ -27,6 +27,7 @@ import MeetingsScreen from './Components/Screens/MeetingsScreen';
 import NotificationsScreen from './Components/Screens/NotificationsScreen';
 import SecuritySettingsScreen from './Components/Screens/SecuritySettingsScreen';
 import DeleteAccountScreen from './Components/Screens/DeleteAccountScreen';
+import SettingsScreen from './Components/Screens/SettingsScreen';
 import ReportUserScreen from './Components/Screens/ReportUserScreen';
 import BlockedUsersScreen from './Components/Screens/BlockedUsersScreen';
 import MyReportsScreen from './Components/Screens/MyReportsScreen';
@@ -186,6 +187,10 @@ export default function App() {
               <Stack.Screen
                 name="DeleteAccountScreen"
                 component={DeleteAccountScreen}
+              />
+              <Stack.Screen
+                name="SettingsScreen"
+                component={SettingsScreen}
               />
               <Stack.Screen
                 name="ReportUserScreen"

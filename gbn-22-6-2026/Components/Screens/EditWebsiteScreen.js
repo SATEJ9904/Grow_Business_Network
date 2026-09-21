@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -32,8 +31,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
-
-const { width } = Dimensions.get('window');
+import KeyboardScreen from '../KeyboardScreen';
 
 // const LOCAL_BACKEND_HOST = Platform.select({
 //   android: 'http://192.168.14.149',
@@ -835,7 +833,9 @@ const EditWebsiteScreen = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#03120A" barStyle="light-content" />
 
+      <KeyboardScreen>
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
         keyboardShouldPersistTaps="handled"
@@ -1763,6 +1763,7 @@ const EditWebsiteScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 };

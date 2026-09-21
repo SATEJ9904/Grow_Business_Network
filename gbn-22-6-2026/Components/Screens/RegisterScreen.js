@@ -8,7 +8,7 @@ import {
   StatusBar,
   ImageBackground,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Modal,
   Alert,
   ScrollView,
@@ -28,6 +28,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 // The registration fee is never hardcoded here - it's fetched from
 // GET /api/payment/registration-fee, which computes it from the backend's
@@ -43,9 +44,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_REGEX = /^\d{10}$/;
 const PASSWORD_MIN_LENGTH = 6;
 
-const { width } = Dimensions.get('window');
-
 export default function RegisterScreen({ navigation }) {
+  const { width } = useWindowDimensions();
   const [step, setStep] = useState(1);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -861,6 +861,7 @@ export default function RegisterScreen({ navigation }) {
         barStyle="light-content"
       />
 
+      <KeyboardScreen>
       <Text style={styles.header}>Create Account</Text>
 
       <Animated.View
@@ -933,6 +934,7 @@ export default function RegisterScreen({ navigation }) {
 
         {step === 2 && (
           <ScrollView
+            style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -1107,7 +1109,7 @@ export default function RegisterScreen({ navigation }) {
 
         {/* STEP 3 */}
         {step === 4 && (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>💳 Registration Fee</Text>
 
             <View style={styles.feeCard}>
@@ -1246,6 +1248,7 @@ export default function RegisterScreen({ navigation }) {
           </>
         )}
       </Animated.View>
+      </KeyboardScreen>
 
       {/* OTP MODAL */}
       <Modal

@@ -6,11 +6,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   Alert,
   StyleSheet,
 } from 'react-native';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const API_URL = API_BASE_URL;
 
@@ -74,6 +76,13 @@ export default function VerifyResetOTPScreen({
 
   return (
     <View style={styles.container}>
+      <KeyboardScreen>
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.title}>
         Verify OTP
       </Text>
@@ -104,6 +113,8 @@ export default function VerifyResetOTPScreen({
             : 'Verify OTP'}
         </Text>
       </TouchableOpacity>
+      </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 }
@@ -111,9 +122,15 @@ export default function VerifyResetOTPScreen({
 const styles = StyleSheet.create({
   container:{
     ...StyleSheet.absoluteFillObject,
-    justifyContent:'center',
-    padding:20,
     backgroundColor:'#fff',
+  },
+  scrollFlex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
   title:{
     fontSize:28,

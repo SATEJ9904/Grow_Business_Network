@@ -8,6 +8,48 @@ const DeletedRecord = require("../models/DeletedRecord");
 const userService = require("../services/userService");
 const { sendMemberProfileUpdatedEmail } = require("../services/emailService");
 
+// Fields a member may set on their own profile via PUT /member/profile -
+// exactly the set the mobile app's edit-profile screens actually send.
+// Everything else (role, status, accountStatus, enforcementStatus,
+// suspensionEndsAt, blockedUserIds, paymentStatus, refreshToken, password,
+// etc.) must never be settable from this self-service endpoint, since a
+// user could otherwise self-promote to admin or clear their own
+// moderation enforcement by including those keys in the request body.
+const SELF_EDITABLE_PROFILE_FIELDS = [
+  "name",
+  "email",
+  "mobile",
+  "companyName",
+  "tagline",
+  "businessCategory",
+  "industry",
+  "website",
+  "uniqueBusiness",
+  "professionalValues",
+  "expertise",
+  "achievements",
+  "collaborationType",
+  "growthOpportunities",
+  "connectReason",
+  "preferredCities",
+  "products",
+  "priceRange",
+  "minimumOrder",
+  "serviceAreas",
+  "instagram",
+  "linkedin",
+];
+
+function pickSelfEditableFields(body) {
+  const picked = {};
+  for (const field of SELF_EDITABLE_PROFILE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      picked[field] = body[field];
+    }
+  }
+  return picked;
+}
+
 /**
  * Get current user profile
  * GET /api/member/profile
@@ -47,9 +89,7 @@ const updateProfile = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const updateData = {
-      ...req.body,
-    };
+    const updateData = pickSelfEditableFields(req.body || {});
 
     console.log("BODY:", req.body);
     console.log("FILES:", req.files);

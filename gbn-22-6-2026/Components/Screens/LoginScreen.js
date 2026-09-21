@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   StyleSheet,
   Image,
   ImageBackground,
+  ScrollView,
   StatusBar,
-  Dimensions,
+  useWindowDimensions,
   Alert,
   Modal,
 } from 'react-native';
@@ -18,12 +19,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
 import * as biometricAuth from '../utils/biometricAuth';
 import { refreshSession } from '../utils/authSession';
+import KeyboardScreen from '../KeyboardScreen';
 
 const API_URL = API_BASE_URL;
-
-const { width, height } = Dimensions.get('window');
-
-const scale = size => (width / 375) * size;
 
 const BIOMETRIC_FAILURE_MESSAGES = {
   lockout:
@@ -53,6 +51,10 @@ async function persistSession({ accessToken, refreshToken, user }) {
 }
 
 export default function LoginScreen({ navigation }) {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const styles = useMemo(() => createStyles(width, height), [width, height]);
+
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [secure, setSecure] = useState(true);
@@ -352,6 +354,105 @@ export default function LoginScreen({ navigation }) {
     biometricState.biometryType,
   );
 
+  // Shared between the portrait and landscape branches below, so the form
+  // itself is defined exactly once - only how it's framed (stacked under
+  // the logo vs. beside it in its own scrollable pane) differs by
+  // orientation.
+  const formContent = (
+    <>
+      <Text style={styles.title}>Welcome to GBN</Text>
+
+      <View style={styles.inputBox}>
+        <TextInput
+          placeholder="Email or Username"
+          placeholderTextColor="#000000"
+          autoCapitalize="none"
+          style={styles.input}
+          value={identifier}
+          onChangeText={setIdentifier}
+        />
+      </View>
+
+      <View style={styles.inputBox}>
+        <TextInput
+          placeholder="Password"
+          placeholderTextColor="#000000"
+          secureTextEntry={secure}
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity
+          onPress={guardedToggleSecure}
+          style={styles.eyeButton}
+          hitSlop={{
+            top: 20,
+            bottom: 20,
+            left: 20,
+            right: 20,
+          }}
+        >
+          <Icon name={secure ? 'eye-off' : 'eye'} size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity
+        style={styles.forgotContainer}
+        onPress={guardedForgotPassword}
+        disabled={forgotLoading}
+      >
+        <Text style={styles.forgot}>
+          {forgotLoading ? 'Sending...' : 'Forgot password?'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, loading && styles.disabledButton]}
+        onPress={guardedLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Logging in...' : 'Login'}
+        </Text>
+      </TouchableOpacity>
+
+      {biometricState.available && biometricState.configuredUserId && (
+        <>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.biometricButton,
+              biometricBusy && styles.disabledButton,
+            ]}
+            onPress={guardedBiometricLogin}
+            disabled={biometricBusy}
+          >
+            <Icon
+              name="finger-print-outline"
+              size={20}
+              color="#0B3D2E"
+              style={styles.biometricIcon}
+            />
+            <Text style={styles.biometricButtonText}>
+              {biometricBusy ? 'Checking…' : `Log In with ${biometryLabel}`}
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      <View style={styles.registerRow}>
+        <Text style={styles.accountText}>Don’t have an account? </Text>
+        <TouchableOpacity onPress={guardedGoRegister}>
+          <Text style={styles.registerLink}>Register</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
   return (
     <ImageBackground
       source={require('../Images/bgimage2.png')}
@@ -364,106 +465,203 @@ export default function LoginScreen({ navigation }) {
         barStyle="dark-content"
       />
 
-      <View style={styles.logoContainer}>
-        <Image source={require('../Images/logo.jpeg')} style={styles.logo} />
-        <Text style={styles.tagline}>
-          {' '}
-          Grow your network. Grow your business.
-        </Text>
-      </View>
+      <KeyboardScreen>
+      {isLandscape ? (
+        // LANDSCAPE ONLY - a real two-pane layout, not the portrait design
+        // squeezed sideways. The brand pane is fixed/always visible; only
+        // the form pane scrolls if it doesn't fit the shorter viewport, so
+        // the logo can never end up pushed off-screen by the form's own
+        // height the way a single shared scroll region did.
+        <View style={styles.landscapeSplit}>
+          <View style={styles.landscapeBrandPane}>
+            <View style={styles.landscapeBrandTop}>
+              <Image
+                source={require('../Images/logo.jpeg')}
+                style={[styles.logo, styles.logoLandscape]}
+              />
+              <Text style={[styles.tagline, styles.taglineLandscape]}>
+                Grow your network.{'\n'}Grow your business.
+              </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Welcome to GBN</Text>
+              <View style={styles.landscapeFeatureRow}>
+                <View style={styles.landscapeFeature}>
+                  <Icon name="people-outline" size={22} color="#FF7A00" />
+                  <Text style={styles.landscapeFeatureText}>
+                    Connect{'\n'}Professionals
+                  </Text>
+                </View>
 
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Email or Username"
-            placeholderTextColor="#000000"
-            autoCapitalize="none"
-            style={styles.input}
-            value={identifier}
-            onChangeText={setIdentifier}
-          />
-        </View>
+                <View style={styles.landscapeFeature}>
+                  <Icon name="trending-up-outline" size={22} color="#FF7A00" />
+                  <Text style={styles.landscapeFeatureText}>
+                    Expand{'\n'}Your Business
+                  </Text>
+                </View>
 
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#000000"
-            secureTextEntry={secure}
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity
-            onPress={guardedToggleSecure}
-            style={styles.eyeButton}
-            hitSlop={{
-              top: 20,
-              bottom: 20,
-              left: 20,
-              right: 20,
-            }}
-          >
-            <Icon name={secure ? 'eye-off' : 'eye'} size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={styles.forgotContainer}
-          onPress={guardedForgotPassword}
-          disabled={forgotLoading}
-        >
-          <Text style={styles.forgot}>
-            {forgotLoading ? 'Sending...' : 'Forgot password?'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.disabledButton]}
-          onPress={guardedLogin}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Logging in...' : 'Login'}
-          </Text>
-        </TouchableOpacity>
-
-        {biometricState.available && biometricState.configuredUserId && (
-          <>
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
+                <View style={styles.landscapeFeature}>
+                  <Icon name="git-network-outline" size={22} color="#FF7A00" />
+                  <Text style={styles.landscapeFeatureText}>
+                    Build Stronger{'\n'}Networks
+                  </Text>
+                </View>
+              </View>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.biometricButton,
-                biometricBusy && styles.disabledButton,
-              ]}
-              onPress={guardedBiometricLogin}
-              disabled={biometricBusy}
-            >
-              <Icon
-                name="finger-print-outline"
-                size={20}
-                color="#0B3D2E"
-                style={styles.biometricIcon}
-              />
-              <Text style={styles.biometricButtonText}>
-                {biometricBusy ? 'Checking…' : `Log In with ${biometryLabel}`}
-              </Text>
-            </TouchableOpacity>
-          </>
-        )}
+            <View style={styles.landscapeBrandBottomRow}>
+              <Text style={styles.landscapeBrandCaption}>PEOPLE</Text>
+              <Text style={styles.landscapeBrandCaptionDivider}>|</Text>
+              <Text style={styles.landscapeBrandCaption}>BUSINESS</Text>
+              <Text style={styles.landscapeBrandCaptionDivider}>|</Text>
+              <Text style={styles.landscapeBrandCaption}>GROWTH</Text>
+              <View style={styles.landscapeBrandCaptionLine} />
+            </View>
+          </View>
 
-        <View style={styles.registerRow}>
-          <Text style={styles.accountText}>Don’t have an account? </Text>
-          <TouchableOpacity onPress={guardedGoRegister}>
-            <Text style={styles.registerLink}>Register</Text>
-          </TouchableOpacity>
+          <View style={styles.landscapeFormPane}>
+            <ScrollView
+              style={styles.scrollFlex}
+              contentContainerStyle={styles.landscapeFormScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.card}>
+                <Text style={[styles.title, styles.landscapeTitle]}>Welcome to GBN</Text>
+                <Text style={styles.landscapeSubtitle}>
+                  Sign in to continue to your business network
+                </Text>
+
+                <View style={[styles.inputBox, styles.landscapeInputBox]}>
+                  <Icon
+                    name="mail-outline"
+                    size={18}
+                    color="#6B7280"
+                    style={styles.landscapeInputIcon}
+                  />
+                  <TextInput
+                    placeholder="Email or Username"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    style={styles.input}
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                  />
+                </View>
+
+                <View style={[styles.inputBox, styles.landscapeInputBox]}>
+                  <Icon
+                    name="lock-closed-outline"
+                    size={18}
+                    color="#6B7280"
+                    style={styles.landscapeInputIcon}
+                  />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor="#9CA3AF"
+                    secureTextEntry={secure}
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={guardedToggleSecure}
+                    style={styles.eyeButton}
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                  >
+                    <Icon name={secure ? 'eye-off' : 'eye'} size={22} color="#000" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.forgotContainer}
+                  onPress={guardedForgotPassword}
+                  disabled={forgotLoading}
+                >
+                  <Text style={styles.forgot}>
+                    {forgotLoading ? 'Sending...' : 'Forgot password?'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    styles.landscapeButton,
+                    loading && styles.disabledButton,
+                  ]}
+                  onPress={guardedLogin}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? 'Logging in...' : 'Login'}
+                  </Text>
+                  {!loading && (
+                    <Icon
+                      name="arrow-forward"
+                      size={18}
+                      color="#fff"
+                      style={styles.landscapeButtonIcon}
+                    />
+                  )}
+                </TouchableOpacity>
+
+                {biometricState.available && biometricState.configuredUserId && (
+                  <>
+                    <View style={styles.dividerRow}>
+                      <View style={styles.dividerLine} />
+                      <Text style={styles.dividerText}>or</Text>
+                      <View style={styles.dividerLine} />
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.biometricButton,
+                        biometricBusy && styles.disabledButton,
+                      ]}
+                      onPress={guardedBiometricLogin}
+                      disabled={biometricBusy}
+                    >
+                      <Icon
+                        name="finger-print-outline"
+                        size={20}
+                        color="#0B3D2E"
+                        style={styles.biometricIcon}
+                      />
+                      <Text style={styles.biometricButtonText}>
+                        {biometricBusy ? 'Checking…' : `Log In with ${biometryLabel}`}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                <View style={styles.registerRow}>
+                  <Text style={styles.accountText}>Don’t have an account? </Text>
+                  <TouchableOpacity onPress={guardedGoRegister}>
+                    <Text style={styles.registerLink}>Register</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      ) : (
+        // PORTRAIT ONLY - unchanged from the original design.
+        <ScrollView
+          style={styles.scrollFlex}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoContainer}>
+            <Image source={require('../Images/logo.jpeg')} style={styles.logo} />
+            <Text style={styles.tagline}>
+              {' '}
+              Grow your network. Grow your business.
+            </Text>
+          </View>
+
+          <View style={styles.card}>{formContent}</View>
+        </ScrollView>
+      )}
+      </KeyboardScreen>
 
       <Modal
         visible={!!setupPrompt}
@@ -507,10 +705,25 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+// A function of the live window width/height (via useWindowDimensions in
+// the component below) rather than a plain StyleSheet.create at module
+// scope - so `scale()` and the sizes derived from it stay correct after a
+// rotation instead of freezing at whatever the screen was on first launch.
+const createStyles = (width, height) => {
+  const scale = size => (width / 375) * size;
+
+  return StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     paddingHorizontal: scale(20),
+  },
+
+  scrollFlex: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
   },
 
@@ -519,16 +732,128 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.03,
   },
 
+  // Landscape: logo/tagline sit in a left column beside the form instead
+  // of stacked above it, so rotating reads as a deliberate two-pane layout
+  // rather than the portrait design just squashed sideways.
+  // Landscape only - portrait keeps its original single-column layout and
+  // styles untouched. Content is top-anchored (not vertically centered)
+  // here on purpose: centering an overflowing flex container inside a
+  // ScrollView is unreliable in RN and was pushing the logo down /
+  // clipping the tagline off the top when the two columns together were
+  // taller than the rotated viewport - top-anchored + scrollable never
+  // hides anything, however tall the content gets.
+  // Landscape only, real two-pane layout - a fixed brand pane (never
+  // scrolls, so the logo/tagline are always fully visible) beside an
+  // independently-scrolling form pane. Using two separately-sized flex
+  // regions instead of one shared scroller is what actually fixes the
+  // earlier bug: the brand pane's height is the real screen height, not
+  // stretched to match the form's height, so centering inside it never
+  // overflows.
+  landscapeSplit: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+
+  landscapeBrandPane: {
+    flex: 0.3,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(20),
+  },
+
+  landscapeBrandTop: {
+    alignItems: 'flex-start',
+  },
+
+  landscapeFeatureRow: {
+    flexDirection: 'row',
+    marginTop: scale(18),
+  },
+
+  landscapeFeature: {
+    marginRight: scale(16),
+    maxWidth: scale(80),
+  },
+
+  landscapeFeatureText: {
+    marginTop: scale(6),
+    color: '#0B3D2E',
+    fontSize: scale(10),
+    fontWeight: '700',
+    lineHeight: scale(13),
+  },
+
+  landscapeBrandBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+
+  landscapeBrandCaption: {
+    color: '#6B7280',
+    fontSize: scale(10),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+
+  landscapeBrandCaptionDivider: {
+    color: '#D1D5DB',
+    fontSize: scale(10),
+    marginHorizontal: scale(6),
+  },
+
+  landscapeBrandCaptionLine: {
+    width: scale(40),
+    height: 1,
+    backgroundColor: '#D1D5DB',
+    marginLeft: scale(10),
+  },
+
+  landscapeFormPane: {
+    // No maxWidth here on purpose - it was capping this pane below its
+    // 0.7 share on wider screens, leaving unused space instead of a true
+    // 30:70 split.
+    flex: 0.7,
+  },
+
+  landscapeFormScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: scale(20),
+    paddingHorizontal: scale(20),
+  },
+
   logo: {
     width: scale(160),
     height: scale(80),
     resizeMode: 'contain',
   },
 
+  // Landscape only - smaller than the portrait logo since it now shares
+  // the screen with the form instead of having the full width to itself.
+  logoLandscape: {
+    width: scale(100),
+    height: scale(50),
+  },
+
   tagline: {
     color: '#000',
     fontSize: scale(13),
     marginTop: 5,
+  },
+
+  // Landscape only - a more deliberate, premium treatment for the brand
+  // pane's copy than plain black caption text: brand-green, a touch
+  // larger, letter-spaced, with a short accent line underneath.
+  taglineLandscape: {
+    color: '#0B3D2E',
+    fontSize: scale(19),
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    textAlign: 'left',
+    marginTop: scale(16),
+    lineHeight: scale(25),
   },
 
   card: {
@@ -546,6 +871,17 @@ const styles = StyleSheet.create({
     marginBottom: scale(25),
   },
 
+  // Landscape only.
+  landscapeTitle: {
+    marginBottom: scale(4),
+  },
+
+  landscapeSubtitle: {
+    color: '#6B7280',
+    fontSize: scale(13),
+    marginBottom: scale(20),
+  },
+
   subtitle: {
     color: '#777',
     marginBottom: scale(12),
@@ -561,6 +897,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(10),
     marginBottom: scale(10),
     backgroundColor: '#fafafa',
+  },
+
+  // Landscape only - a bit taller, with room for the leading icon added
+  // below.
+  landscapeInputBox: {
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(4),
+  },
+
+  landscapeInputIcon: {
+    marginRight: scale(10),
   },
 
   input: {
@@ -587,6 +934,18 @@ const styles = StyleSheet.create({
     borderRadius: scale(12),
     alignItems: 'center',
     marginTop: scale(5),
+  },
+
+  // Landscape only - the button gains a trailing arrow icon, so it needs
+  // to lay its content out as a row instead of the portrait version's
+  // single centered line of text.
+  landscapeButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+
+  landscapeButtonIcon: {
+    marginLeft: scale(8),
   },
 
   disabledButton: {
@@ -715,4 +1074,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: scale(13),
   },
-});
+  });
+};

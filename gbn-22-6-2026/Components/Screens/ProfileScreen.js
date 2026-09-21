@@ -15,18 +15,16 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  Dimensions,
+  useWindowDimensions,
   TextInput,
 } from 'react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const PREVIEW_SIZE = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT * 0.7);
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Dropdown } from 'react-native-element-dropdown';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_BASE_URL as BASE_URL } from '../utils/apiConfig';
 
 const BLOCK_REASON_OPTIONS = [
@@ -44,6 +42,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 if (
   Platform.OS === 'android' &&
@@ -52,7 +51,45 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+// "March 2024" - just month + year, for a "Joined" date nobody needs to
+// the day for.
+function formatJoinedDate(dateString) {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// "5 days ago", "1 month ago" - coarse relative time for a "last updated"
+// hint; no need for anything more precise than that here.
+function formatRelativeTime(dateString) {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return 'Just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+
+  const years = Math.floor(months / 12);
+  return `${years} year${years === 1 ? '' : 's'} ago`;
+}
+
 const ProfileScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const previewSize = Math.min(screenWidth, screenHeight * 0.7);
   const userId = route?.params?.user?._id;
 
   const [user, setUser] = useState({});
@@ -63,6 +100,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const showSlowNotice = useDelayedNotice(loading, 8000);
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
+  const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [blockReason, setBlockReason] = useState(null);
@@ -288,6 +326,17 @@ const ProfileScreen = ({ route, navigation }) => {
   const guardedOpenActionMenu = useGuardedAction(() => setActionMenuVisible(true), 250);
   const guardedCloseActionMenu = useGuardedAction(() => setActionMenuVisible(false), 250);
 
+  const openAboutModal = () => {
+    setActionMenuVisible(false);
+    setAboutModalVisible(true);
+  };
+
+  const guardedOpenAboutModal = useGuardedAction(openAboutModal, 250);
+  const guardedCloseAboutModal = useGuardedAction(
+    () => setAboutModalVisible(false),
+    250,
+  );
+
   const goToReport = () => {
     setActionMenuVisible(false);
     navigation?.navigate('ReportUserScreen', {
@@ -363,6 +412,7 @@ const ProfileScreen = ({ route, navigation }) => {
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
 
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: 100,
@@ -401,7 +451,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
           {/* HEADER ROW */}
 
-          <View style={styles.profileHeaderRow}>
+          <View style={[styles.profileHeaderRow, { top: insets.top + 12 }]}>
             {navigation && (
               <TouchableOpacity
                 activeOpacity={0.85}
@@ -409,16 +459,6 @@ const ProfileScreen = ({ route, navigation }) => {
                 onPress={guardedGoBack}
               >
                 <Icon name="chevron-back" size={22} color="#fff" />
-              </TouchableOpacity>
-            )}
-
-            {!isOwnProfile && navigation && (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={styles.menuIconBtn}
-                onPress={guardedOpenActionMenu}
-              >
-                <Icon name="ellipsis-vertical" size={20} color="#111827" />
               </TouchableOpacity>
             )}
           </View>
@@ -471,7 +511,14 @@ const ProfileScreen = ({ route, navigation }) => {
               <TouchableOpacity
                 activeOpacity={1}
                 onPress={() => {}}
-                style={styles.imagePreviewFrame}
+                style={[
+                  styles.imagePreviewFrame,
+                  {
+                    width: previewSize,
+                    height: previewSize,
+                    borderRadius: previewSize / 2,
+                  },
+                ]}
               >
                 <Image
                   source={{ uri: profileImage }}
@@ -502,6 +549,15 @@ const ProfileScreen = ({ route, navigation }) => {
               <TouchableOpacity
                 style={styles.actionSheetRow}
                 activeOpacity={0.8}
+                onPress={guardedOpenAboutModal}
+              >
+                <Icon name="information-circle-outline" size={20} color="#111827" />
+                <Text style={styles.actionSheetRowText}>About This Profile</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionSheetRow}
+                activeOpacity={0.8}
                 onPress={guardedGoToReport}
               >
                 <Icon name="flag-outline" size={20} color="#111827" />
@@ -528,6 +584,79 @@ const ProfileScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </Modal>
 
+        {/* ABOUT THIS PROFILE (minimal account info) */}
+
+        <Modal
+          visible={aboutModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={guardedCloseAboutModal}
+        >
+          <TouchableOpacity
+            style={styles.actionSheetBackdrop}
+            activeOpacity={1}
+            onPress={guardedCloseAboutModal}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.actionSheet}>
+              <View style={styles.actionSheetHandle} />
+
+              <Text style={styles.aboutModalTitle}>About This Profile</Text>
+
+              {user?.status === 'approved' ? (
+                <View style={styles.verifiedBadge}>
+                  <Icon name="checkmark-circle" size={16} color="#0B3D2E" />
+                  <Text style={styles.verifiedBadgeText}>Admin Verified Member</Text>
+                </View>
+              ) : (
+                <View style={styles.pendingBadge}>
+                  <Icon name="time-outline" size={16} color="#7A5220" />
+                  <Text style={styles.pendingBadgeText}>Verification Pending</Text>
+                </View>
+              )}
+
+              <View style={styles.aboutRow}>
+                <View style={styles.aboutIconBox}>
+                  <Icon name="calendar-outline" size={18} color="#0B3D2E" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.aboutLabel}>Joined</Text>
+                  <Text style={styles.aboutValue}>{formatJoinedDate(user?.createdAt)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.aboutRow}>
+                <View style={styles.aboutIconBox}>
+                  <Icon name="briefcase-outline" size={18} color="#0B3D2E" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.aboutLabel}>Business Type</Text>
+                  <Text style={styles.aboutValue}>
+                    {user?.businessType || user?.businessCategory || 'Not specified'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.aboutRow}>
+                <View style={styles.aboutIconBox}>
+                  <Icon name="refresh-outline" size={18} color="#0B3D2E" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.aboutLabel}>Profile Updated</Text>
+                  <Text style={styles.aboutValue}>{formatRelativeTime(user?.updatedAt)}</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.actionSheetCancel}
+                activeOpacity={0.8}
+                onPress={guardedCloseAboutModal}
+              >
+                <Text style={styles.actionSheetCancelText}>Close</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
         {/* BLOCK USER MODAL (with description, so admins understand why) */}
 
         <Modal
@@ -536,6 +665,7 @@ const ProfileScreen = ({ route, navigation }) => {
           animationType="slide"
           onRequestClose={guardedCloseBlockModal}
         >
+          <KeyboardScreen>
           <TouchableOpacity
             style={styles.actionSheetBackdrop}
             activeOpacity={1}
@@ -606,12 +736,28 @@ const ProfileScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             </TouchableOpacity>
           </TouchableOpacity>
+          </KeyboardScreen>
         </Modal>
 
         {/* PROFILE CONTENT */}
 
         <View style={styles.profileContainer}>
-          <Text style={styles.name}>{user?.name || 'Professional User'}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {user?.name || 'Professional User'}
+            </Text>
+
+            {!isOwnProfile && navigation && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.nameMenuBtn}
+                onPress={guardedOpenActionMenu}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Icon name="ellipsis-vertical" size={20} color="#111827" />
+              </TouchableOpacity>
+            )}
+          </View>
 
           <Text style={styles.company}>
             {user?.companyName || 'Professional Company'}
@@ -908,8 +1054,11 @@ const styles = StyleSheet.create({
   },
 
   profileHeaderRow: {
+    // `top` is set inline from useSafeAreaInsets() - a fixed value here
+    // used to land under the iOS notch/Dynamic Island (and, on newer
+    // Android with edge-to-edge enabled, under the status bar), which is
+    // why the ⋯ menu button was unclickable: it was sitting under OS UI.
     position: 'absolute',
-    top: 20,
     left: 20,
     right: 20,
     flexDirection: 'row',
@@ -924,20 +1073,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-  menuIconBtn: {
-    width: 34,
-    height: 44,
-    borderRadius: 17,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
 
   actionSheetBackdrop: {
@@ -989,6 +1124,80 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#6B7280',
+  },
+
+  /* ABOUT THIS PROFILE */
+
+  aboutModalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 14,
+  },
+
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#EEF9F0',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    marginBottom: 18,
+  },
+
+  verifiedBadgeText: {
+    marginLeft: 6,
+    color: '#0B3D2E',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F6ECD9',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    marginBottom: 18,
+  },
+
+  pendingBadgeText: {
+    marginLeft: 6,
+    color: '#7A5220',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  aboutIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EEF9F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+
+  aboutLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+
+  aboutValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
   },
 
   blockModalTitle: {
@@ -1132,9 +1341,8 @@ const styles = StyleSheet.create({
   },
 
   imagePreviewFrame: {
-    width: PREVIEW_SIZE,
-    height: PREVIEW_SIZE,
-    borderRadius: PREVIEW_SIZE / 2,
+    // width/height/borderRadius applied inline from useWindowDimensions()
+    // so this stays correctly sized after a rotation.
     overflow: 'hidden',
     borderWidth: 3,
     borderColor: '#fff',
@@ -1168,11 +1376,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+
   name: {
+    flex: 1,
     fontSize: 30,
     fontWeight: '900',
     color: '#111827',
-    marginTop: 10,
+  },
+
+  nameMenuBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
   },
 
   company: {

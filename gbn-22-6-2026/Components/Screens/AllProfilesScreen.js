@@ -29,6 +29,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -675,6 +676,7 @@ const AllProfilesScreen = () => {
         <Text style={styles.bannerEmoji}>✨</Text>
       </View> */}
 
+      <KeyboardScreen>
       {/* ================= SEARCH BAR ================= */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
@@ -710,6 +712,7 @@ const AllProfilesScreen = () => {
           </View>
         ) : (
           <FlatList
+            style={{ flex: 1 }}
             data={filteredData}
             keyExtractor={item => item._id}
             renderItem={renderItem}
@@ -732,6 +735,7 @@ const AllProfilesScreen = () => {
           />
         )}
       </View>
+      </KeyboardScreen>
     </View>
   );
 };

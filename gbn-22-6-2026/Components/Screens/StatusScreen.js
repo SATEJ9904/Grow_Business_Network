@@ -165,12 +165,12 @@ export default function StatusScreen({ navigation }) {
         console.log('✅ User status saved to AsyncStorage:', status);
 
         if (status === 'approved') {
-          console.log('✅ Status is approved, navigating to Generate');
+          console.log('✅ Status is approved, navigating to Dashboard');
           Alert.alert(
             'Approved',
-            'Your account is approved. Redirecting to Generate.',
+            'Your account is approved. Welcome to GBN!',
           );
-          navigation.replace('Generate');
+          navigation.replace('Dashboard');
           return;
         }
       } else {

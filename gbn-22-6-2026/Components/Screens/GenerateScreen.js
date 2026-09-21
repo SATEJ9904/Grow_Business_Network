@@ -26,6 +26,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -522,6 +523,7 @@ const GenerateScreen = ({ navigation }) => {
       style={styles.background}
       imageStyle={styles.backgroundImage}
     >
+      <KeyboardScreen>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
@@ -1059,6 +1061,7 @@ const GenerateScreen = ({ navigation }) => {
           );
         })}
       </ScrollView>
+      </KeyboardScreen>
     </ImageBackground>
   );
 };

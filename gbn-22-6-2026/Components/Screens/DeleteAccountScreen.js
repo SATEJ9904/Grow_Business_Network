@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
 import * as biometricAuth from '../utils/biometricAuth';
+import KeyboardScreen from '../KeyboardScreen';
 
 const API_URL = API_BASE_URL;
 const SUPPORT_URL = 'https://support.gbnsocialassociations.in';
@@ -234,7 +235,9 @@ export default function DeleteAccountScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar backgroundColor="#17310F" barStyle="light-content" />
 
+      <KeyboardScreen>
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}
       >
@@ -440,6 +443,7 @@ export default function DeleteAccountScreen({ navigation }) {
           )}
         </View>
       </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 }

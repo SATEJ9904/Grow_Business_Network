@@ -156,6 +156,7 @@ const DashboardScreen = ({ navigation }) => {
       <StatusBar backgroundColor="#17310F" barStyle="light-content" />
 
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >

@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   StatusBar,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
@@ -123,6 +124,7 @@ export default function SecuritySettingsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar backgroundColor="#17310F" barStyle="light-content" />
 
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <View style={styles.circleOne} />
         <View style={styles.circleTwo} />
@@ -206,6 +208,7 @@ export default function SecuritySettingsScreen({ navigation }) {
           </View>
         </View>
       )}
+      </ScrollView>
     </View>
   );
 }

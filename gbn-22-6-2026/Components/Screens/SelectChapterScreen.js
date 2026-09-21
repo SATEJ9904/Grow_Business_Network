@@ -10,7 +10,7 @@ import {
   Image,
   StatusBar,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   ScrollView,
   Alert,
 } from 'react-native';
@@ -24,11 +24,12 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
-import { clearSession } from '../utils/session';
-
-const { width, height } = Dimensions.get('window');
 
 const SelectChapterScreen = ({ navigation }) => {
+  // Reactive to rotation/foldable-hinge changes, unlike Dimensions.get()
+  // captured once at module load - the sidebar's width/slide-offset must
+  // track the current window size, not whatever it was on first launch.
+  const { width, height } = useWindowDimensions();
   const [cities, setCities] = useState([]);
   const dropdownRef = useRef(null);
   const [selectedCity, setSelectedCity] = useState(null);
@@ -167,21 +168,11 @@ const SelectChapterScreen = ({ navigation }) => {
     });
   };
 
-  const logoutUser = async () => {
-    // Preserves biometric config/counters for this account — see
-    // Components/utils/session.js and Components/utils/biometricAuth.js.
-    await clearSession();
-
-    navigation.replace('Login');
-  };
-
   const showSlowNotice = useDelayedNotice(loading, 8000);
 
   const guardedGoToMembers = useGuardedAction((chapterId, chapterName) =>
     navigation.navigate('MembersScreen', { chapterId, chapterName }),
   );
-
-  const guardedLogout = useGuardedAction(logoutUser);
 
   const guardedGoProfile = useGuardedAction(() => {
     closeSidebar();
@@ -193,24 +184,9 @@ const SelectChapterScreen = ({ navigation }) => {
     navigation.navigate('EditWebsiteScreen');
   });
 
-  const guardedGoSecurity = useGuardedAction(() => {
+  const guardedGoSettings = useGuardedAction(() => {
     closeSidebar();
-    navigation.navigate('SecuritySettingsScreen');
-  });
-
-  const guardedGoDeleteAccount = useGuardedAction(() => {
-    closeSidebar();
-    navigation.navigate('DeleteAccountScreen');
-  });
-
-  const guardedGoMyReports = useGuardedAction(() => {
-    closeSidebar();
-    navigation.navigate('MyReportsScreen');
-  });
-
-  const guardedGoBlockedUsers = useGuardedAction(() => {
-    closeSidebar();
-    navigation.navigate('BlockedUsersScreen');
+    navigation.navigate('SettingsScreen');
   });
 
   const renderChapter = ({ item }) => (
@@ -263,6 +239,7 @@ const SelectChapterScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#031109" barStyle="light-content" />
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
         keyboardShouldPersistTaps="handled"
@@ -387,6 +364,8 @@ const SelectChapterScreen = ({ navigation }) => {
             style={[
               styles.sidebar,
               {
+                width: width * 0.82,
+                height,
                 transform: [
                   {
                     translateX: sidebarAnim,
@@ -450,88 +429,22 @@ const SelectChapterScreen = ({ navigation }) => {
               </View>
             </TouchableOpacity>
 
-            {/* SECURITY */}
+            {/* SETTINGS */}
 
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.sidebarCard}
-              onPress={guardedGoSecurity}
+              onPress={guardedGoSettings}
             >
               <View style={styles.iconBox}>
-                <Text style={styles.iconText}>🔐</Text>
+                <Text style={styles.iconText}>⚙️</Text>
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>Security</Text>
+                <Text style={styles.cardTitle}>Settings</Text>
 
-                <Text style={styles.cardSub}>Biometric login settings</Text>
+                <Text style={styles.cardSub}>Security, reports, account & more</Text>
               </View>
-            </TouchableOpacity>
-
-            {/* MY REPORTS */}
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={styles.sidebarCard}
-              onPress={guardedGoMyReports}
-            >
-              <View style={styles.iconBox}>
-                <Text style={styles.iconText}>🚩</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>My Reports</Text>
-
-                <Text style={styles.cardSub}>Track reports you've submitted</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* BLOCKED USERS */}
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={styles.sidebarCard}
-              onPress={guardedGoBlockedUsers}
-            >
-              <View style={styles.iconBox}>
-                <Text style={styles.iconText}>🚫</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>Blocked Users</Text>
-
-                <Text style={styles.cardSub}>Manage members you've blocked</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* DELETE ACCOUNT */}
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={styles.dangerCard}
-              onPress={guardedGoDeleteAccount}
-            >
-              <View style={styles.dangerIconBox}>
-                <Text style={styles.iconText}>⚠️</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.dangerCardTitle}>Delete Account</Text>
-
-                <Text style={styles.dangerCardSub}>Permanently remove your account</Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
-
-            {/* LOGOUT */}
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={styles.logoutButton}
-              onPress={guardedLogout}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -884,8 +797,8 @@ dropdown: {
   },
 
   sidebar: {
-    width: width * 0.82,
-    height: height,
+    // width/height are applied inline from useWindowDimensions() so the
+    // drawer tracks the live screen size on rotation.
     backgroundColor: '#041C15',
     paddingTop: 70,
     paddingHorizontal: 22,
@@ -975,60 +888,6 @@ dropdown: {
     marginTop: 4,
     fontSize: 12,
     fontWeight: '500',
-  },
-
-  dangerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(225,29,29,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(225,29,29,0.18)',
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  dangerIconBox: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: 'rgba(225,29,29,0.14)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-
-  dangerCardTitle: {
-    color: '#FF8A8A',
-    fontSize: 17,
-    fontWeight: '800',
-  },
-
-  dangerCardSub: {
-    color: '#D99FA0',
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginVertical: 24,
-  },
-
-  logoutButton: {
-    backgroundColor: '#E11D1D',
-    height: 58,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '900',
   },
 
   noChapterText: {

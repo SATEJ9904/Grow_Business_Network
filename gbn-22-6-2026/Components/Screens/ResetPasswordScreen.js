@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   Alert,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { API_BASE_URL } from '../utils/apiConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useGuardedAction, getFriendlyErrorMessage } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const API_URL = API_BASE_URL;
-const { width } = Dimensions.get('window');
-const scale = size => (width / 375) * size;
 
 export default function ResetPasswordScreen({ route, navigation }) {
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(width), [width]);
+
   const email = route?.params?.email;
 
   console.log('EMAIL:', email);
@@ -95,7 +98,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
   // Success screen
   if (isSuccess) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.scrollContent]}>
         <View style={styles.successBox}>
           <Text style={styles.successIcon}>✓</Text>
           <Text style={styles.successTitle}>Password Reset Successful!</Text>
@@ -110,6 +113,13 @@ export default function ResetPasswordScreen({ route, navigation }) {
   // Reset form
   return (
     <View style={styles.container}>
+      <KeyboardScreen>
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.heading}>Reset your password</Text>
       <Text style={styles.subtitle}>
         Enter a new password and confirm it to finish resetting your account.
@@ -172,15 +182,29 @@ export default function ResetPasswordScreen({ route, navigation }) {
           {isLoading ? 'Resetting...' : 'Reset Password'}
         </Text>
       </TouchableOpacity>
+      </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+// A function of the live window width (via useWindowDimensions in the
+// component above) so `scale()` stays correct after a rotation instead of
+// freezing at whatever the screen was on first launch.
+const createStyles = width => {
+  const scale = size => (width / 375) * size;
+
+  return StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
     backgroundColor: '#f7fafc',
+  },
+  scrollFlex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: scale(20),
   },
   heading: {
@@ -261,4 +285,5 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-});
+  });
+};

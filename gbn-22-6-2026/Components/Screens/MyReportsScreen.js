@@ -102,6 +102,7 @@ export default function MyReportsScreen({ navigation }) {
         <ActivityIndicator size="large" color="#17310F" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={reports}
           keyExtractor={item => item._id}
           renderItem={renderItem}

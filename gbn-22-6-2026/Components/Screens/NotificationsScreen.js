@@ -119,6 +119,7 @@ const NotificationsScreen = ({ navigation }) => {
         </View>
       ) : feed.length > 0 ? (
         <FlatList
+          style={{ flex: 1 }}
           data={feed}
           renderItem={({ item }) =>
             item.type === 'meeting' ? (

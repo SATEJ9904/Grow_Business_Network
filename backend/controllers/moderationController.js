@@ -461,6 +461,15 @@ const closeCaseHandler = async (req, res) => {
     moderationCase.assignedAdminId = moderationCase.assignedAdminId || req.user._id;
     await moderationCase.save();
 
+    await logActivity({
+      adminId: req.user._id,
+      adminEmail: req.user.email,
+      activityType: status === "CANCELLED" ? "CASE_CANCELLED" : "CASE_CLOSED",
+      description: `${status === "CANCELLED" ? "Cancelled" : "Closed"} case ${moderationCase.caseId} with no enforcement action`,
+      targetUser: moderationCase.reportedUserId,
+      metadata: { caseId: moderationCase.caseId },
+    });
+
     return res.status(200).json({ success: true, message: "Case closed", data: moderationCase });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

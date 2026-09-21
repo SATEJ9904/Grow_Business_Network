@@ -8,13 +8,16 @@ const mongoose = require('mongoose');
 const activityLogSchema = new mongoose.Schema(
   {
     adminId: {
+      // Null for system-initiated entries (e.g. the cron sweep that
+      // auto-restores an expired suspension with no admin actor) - every
+      // other write path is a real admin action and still sets this.
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Admin ID is required'],
+      default: null,
     },
     adminEmail: {
       type: String,
-      required: [true, 'Admin email is required'],
+      default: null,
     },
     activityType: {
       type: String,
@@ -32,6 +35,8 @@ const activityLogSchema = new mongoose.Schema(
         'SESSION_EXPIRED',
         'FAILED_LOGIN',
         'CASE_REJECTED',
+        'CASE_CLOSED',
+        'CASE_CANCELLED',
         'MODERATION_ACTION_BLOCK',
         'MODERATION_ACTION_BAN',
         'MODERATION_ACTION_MESSAGE',

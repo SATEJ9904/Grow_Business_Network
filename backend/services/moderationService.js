@@ -264,10 +264,23 @@ const restoreExpiredSuspensions = async () => {
   });
 
   for (const user of due) {
+    const previousStatus = user.enforcementStatus;
     user.enforcementStatus = "ACTIVE";
     user.suspensionEndsAt = null;
     user.enforcementReason = "";
     await user.save();
+
+    await logActivity({
+      adminId: null,
+      adminEmail: "system@gbn-automated",
+      activityType: "SUSPENSION_AUTO_RESTORED",
+      description: `${user.name}'s ${previousStatus.toLowerCase()} period expired and was automatically lifted`,
+      targetUser: user._id,
+      targetUserEmail: user.email,
+      targetUserName: user.name,
+      targetCompany: user.companyName,
+      metadata: { previousStatus },
+    });
 
     try {
       if (user.email) {

@@ -32,6 +32,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 // Uncontrolled TextInput component with ref - NEVER re-renders
 const TextInputField = memo(
@@ -619,7 +620,9 @@ const EditProfileScreen = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
+      <KeyboardScreen>
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
@@ -909,6 +912,7 @@ const EditProfileScreen = () => {
           <Text style={styles.deleteButtonText}>Delete Profile</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 };

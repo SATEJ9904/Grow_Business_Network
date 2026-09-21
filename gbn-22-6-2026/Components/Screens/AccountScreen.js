@@ -25,6 +25,7 @@ import {
   useDelayedNotice,
   getFriendlyErrorMessage,
 } from '../utils/guards';
+import KeyboardScreen from '../KeyboardScreen';
 
 const AccountScreen = () => {
   const navigation = useNavigation();
@@ -649,7 +650,8 @@ const AccountScreen = () => {
         </TouchableOpacity>
         <Text style={styles.screenTitle}>Account</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardScreen>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {loading && (
           <View style={styles.loadingBanner}>
             <ActivityIndicator size="small" color="#1f2937" />
@@ -1416,6 +1418,7 @@ const AccountScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardScreen>
     </View>
   );
 };
