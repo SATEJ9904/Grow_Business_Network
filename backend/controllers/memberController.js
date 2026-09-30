@@ -5,6 +5,10 @@
 
 const User = require("../models/User");
 const DeletedRecord = require("../models/DeletedRecord");
+const Website = require("../models/Website");
+const jwt = require("jsonwebtoken");
+const { generateAndSendOTP, verifyOTP } = require("../services/otpService");
+const { logActivity } = require("../services/activityService");
 const userService = require("../services/userService");
 const { sendMemberProfileUpdatedEmail } = require("../services/emailService");
 
@@ -590,6 +594,193 @@ const rejectDeletionRequest = async (req, res) => {
   }
 };
 
+// Short-lived proof that the member re-verified their email by OTP just now.
+// Returned by verifyDeletionOTP and required by deleteMyAccount, so a stolen
+// or left-open session alone can never delete an account.
+const DELETION_TOKEN_PURPOSE = "account_deletion";
+const DELETION_TOKEN_EXPIRY = "10m";
+
+/**
+ * Email an OTP to the logged-in member's own address before self-deletion.
+ * The address is taken from the account, never from the request body.
+ * POST /api/member/delete-me/send-otp
+ */
+const sendDeletionOTP = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("email");
+
+    if (!user?.email) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await generateAndSendOTP(user.email);
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification code sent to your email",
+      data: { expiresIn: "5 minutes" },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Verify the self-deletion OTP and hand back a short-lived deletion token.
+ * POST /api/member/delete-me/verify-otp
+ * Body: otp
+ */
+const verifyDeletionOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    if (!otp || !String(otp).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code is required",
+      });
+    }
+
+    const user = await User.findById(req.userId).select("email");
+
+    if (!user?.email) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Throws with a user-facing message on a wrong/expired code
+    await verifyOTP(user.email, String(otp));
+
+    const deletionToken = jwt.sign(
+      { userId: String(user._id), purpose: DELETION_TOKEN_PURPOSE },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: DELETION_TOKEN_EXPIRY },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified",
+      data: { deletionToken },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message.replace(/^OTP verification failed: /, ""),
+    });
+  }
+};
+
+/**
+ * Permanently delete the logged-in member's own account after OTP
+ * verification. Removes exactly one User document (the caller's) plus that
+ * member's own generated website, snapshots it into DeletedRecord and writes
+ * a DELETE_ACCOUNT entry to the admin activity log.
+ * DELETE /api/member/delete-me
+ * Body: deletionToken, acceptedTerms (true)
+ */
+const deleteMyAccount = async (req, res) => {
+  try {
+    const { deletionToken, acceptedTerms } = req.body;
+
+    if (acceptedTerms !== true) {
+      return res.status(400).json({
+        success: false,
+        message: "Please accept the terms to delete your account",
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(deletionToken, process.env.JWT_ACCESS_SECRET);
+    } catch (tokenError) {
+      return res.status(401).json({
+        success: false,
+        message: "Your verification has expired. Please verify your email again.",
+      });
+    }
+
+    if (
+      decoded.purpose !== DELETION_TOKEN_PURPOSE ||
+      decoded.userId !== String(req.userId)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete your own account",
+      });
+    }
+
+    const user = await User.findById(req.userId).populate("chapterId", "name");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await DeletedRecord.create({
+      originalUserId: user._id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      companyName: user.companyName,
+      chapterName: user.chapterId?.name || "",
+      city: user.city,
+      profileImage: user.profileImage,
+      deletionReason: "Deleted by the member from the mobile app",
+      deletedAt: new Date(),
+      deletedBy: user._id,
+    });
+
+    // Scoped to this one member only - deleteOne by their own id
+    await Website.deleteOne({ userId: String(user._id) });
+    const result = await User.deleteOne({ _id: user._id });
+
+    if (result.deletedCount !== 1) {
+      return res.status(500).json({
+        success: false,
+        message: "Could not delete your account. Please try again.",
+      });
+    }
+
+    await logActivity({
+      adminId: null,
+      adminEmail: null,
+      activityType: "DELETE_ACCOUNT",
+      description: `${user.name || user.email} deleted their account from the mobile app`,
+      targetUserEmail: user.email,
+      targetUserName: user.name,
+      targetCompany: user.companyName || null,
+      metadata: {
+        source: "self_service_app",
+        originalUserId: String(user._id),
+        mobile: user.mobile,
+        chapterName: user.chapterId?.name || "",
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") || null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -602,5 +793,8 @@ module.exports = {
   requestDeletion,
   getDeletionRequests,
   rejectDeletionRequest,
+  sendDeletionOTP,
+  verifyDeletionOTP,
+  deleteMyAccount,
   searchMembers,
 };

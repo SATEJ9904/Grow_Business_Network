@@ -1127,6 +1127,7 @@ const getActivities = async (req, res, next) => {
 
     const result = await activityService.getActivityLogs(page, limit, {
       adminId,
+      includeUnattributed: true,
     });
 
     return res.status(200).json({

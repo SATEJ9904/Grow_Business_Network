@@ -50,7 +50,7 @@ async function persistSession({ accessToken, refreshToken, user }) {
   }
 }
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const styles = useMemo(() => createStyles(width, height), [width, height]);
@@ -71,6 +71,15 @@ export default function LoginScreen({ navigation }) {
 
   const [setupPrompt, setSetupPrompt] = useState(null); // { userId, refreshToken } | null
   const [settingUp, setSettingUp] = useState(false);
+
+  useEffect(() => {
+    if (!route?.params?.accountDeleted) return;
+    navigation.setParams({ accountDeleted: undefined });
+    Alert.alert(
+      'Account Deleted',
+      'Account deleted successfully. To join GBN again, please create a new account.',
+    );
+  }, [route?.params?.accountDeleted, navigation]);
 
   useEffect(() => {
     let cancelled = false;

@@ -49,7 +49,13 @@ const getActivityLogs = async (page = 1, limit = 20, filters = {}) => {
     const query = {};
 
     // Apply filters
-    if (filters.adminId) query.adminId = filters.adminId;
+    if (filters.adminId) {
+      // includeUnattributed also returns entries with no admin actor -
+      // member self-deletions and system events like auto-restores.
+      query.adminId = filters.includeUnattributed
+        ? { $in: [filters.adminId, null] }
+        : filters.adminId;
+    }
     if (filters.activityType) query.activityType = filters.activityType;
     if (filters.status) query.status = filters.status;
     if (filters.sessionId) query.sessionId = filters.sessionId;

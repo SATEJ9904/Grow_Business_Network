@@ -13,8 +13,12 @@ const {
   requestDeletion,
   getDeletionRequests,
   rejectDeletionRequest,
+  sendDeletionOTP,
+  verifyDeletionOTP,
+  deleteMyAccount,
   searchMembers,
 } = require("../controllers/memberController");
+const { otpLimiter } = require("../middleware/rateLimiter");
 
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { adminMiddleware } = require("../middleware/adminMiddleware");
@@ -98,6 +102,17 @@ router.delete(
   adminMiddleware,
   deleteAccountByEmail
 );
+
+/**
+ * In-app self-service account deletion for the logged-in member:
+ * 1. POST   /api/member/delete-me/send-otp   - email an OTP to own address
+ * 2. POST   /api/member/delete-me/verify-otp - Body: otp -> deletionToken
+ * 3. DELETE /api/member/delete-me            - Body: deletionToken, acceptedTerms
+ * Headers: Authorization: Bearer {accessToken}
+ */
+router.post("/delete-me/send-otp", authMiddleware, otpLimiter, sendDeletionOTP);
+router.post("/delete-me/verify-otp", authMiddleware, verifyDeletionOTP);
+router.delete("/delete-me", authMiddleware, deleteMyAccount);
 
 /**
  * Submit an account deletion request (public - the member may not be
