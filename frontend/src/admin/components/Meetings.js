@@ -523,7 +523,10 @@ const Meetings = () => {
                         <tr key={row.bookingId}>
                           <td>{row.memberName}</td>
                           <td>{row.city}</td>
-                          <td>{row.chapterName}</td>
+                          <td>
+                            {row.chapterName}
+                            {row.isCrossChapter && <span className="cross-chapter-badge">Cross Chapter</span>}
+                          </td>
                           <td className="mono">{row.transactionId}</td>
                           <td>₹{row.amountPaid.toLocaleString("en-IN")}</td>
                         </tr>

@@ -5,6 +5,8 @@
  *
  * Rooms:
  *   - `admin`               joined by any connected user with role 'admin'
+ *   - `members`             joined by every non-admin user (all-member broadcasts,
+ *                           e.g. new meetings, which are open to every chapter)
  *   - `chapter:<chapterId>` joined by members, scoped to their own chapter
  *   - `user:<userId>`       joined by every connected socket, for 1:1 delivery
  *                           (e.g. moderation case/enforcement updates)
@@ -49,8 +51,11 @@ const initSocket = (httpServer) => {
   io.on('connection', (socket) => {
     if (socket.userRole === 'admin') {
       socket.join('admin');
-    } else if (socket.chapterId) {
-      socket.join(`chapter:${socket.chapterId}`);
+    } else {
+      socket.join('members');
+      if (socket.chapterId) {
+        socket.join(`chapter:${socket.chapterId}`);
+      }
     }
     // Personal room for targeted delivery (e.g. moderation outcome updates)
     socket.join(`user:${socket.userId}`);

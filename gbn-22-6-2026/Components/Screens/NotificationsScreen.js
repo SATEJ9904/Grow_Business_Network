@@ -105,7 +105,7 @@ const NotificationsScreen = ({ navigation }) => {
         </View>
 
         <Text style={styles.heading}>Notifications</Text>
-        <Text style={styles.subHeading}>Meetings and announcements for your chapter.</Text>
+        <Text style={styles.subHeading}>Meetings from all chapters and announcements for you.</Text>
       </View>
 
       {loading ? (

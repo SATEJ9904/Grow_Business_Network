@@ -1,7 +1,7 @@
 /**
  * Meeting Routes
  * Admin: schedule meetings, view booked seats.
- * Member: browse own-chapter meetings, get seen/unseen state, book + pay a seat.
+ * Member: browse meetings from all chapters, get seen/unseen state, book + pay a seat.
  */
 
 const express = require("express");
@@ -29,7 +29,7 @@ const { uploadMiddleware, handleUploadError } = require("../middleware/uploadMid
  */
 
 /**
- * Create a meeting for a chapter. Notifies chapter members in real time.
+ * Create a meeting for a chapter. Notifies all members in real time.
  * POST /api/meetings
  * Headers: Authorization: Bearer {accessToken}
  * Body (multipart/form-data): name, description, meetingDate, meetingTime,
@@ -65,7 +65,7 @@ router.get("/:id/bookings", authMiddleware, adminMiddleware, getMeetingBookings)
  */
 
 /**
- * Meetings for the logged-in member's own chapter.
+ * Meetings from every chapter (cross-chapter booking allowed).
  * GET /api/meetings
  * Headers: Authorization: Bearer {accessToken}
  */
