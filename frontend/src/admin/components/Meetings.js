@@ -13,6 +13,7 @@ import {
   IndianRupee,
   Image as ImageIcon,
   X,
+  History,
 } from "lucide-react";
 import MeetingCountdown from "./MeetingCountdown";
 import "./Meetings.css";
@@ -40,7 +41,11 @@ const emptyForm = {
   gstPercent: "",
 };
 
-const Meetings = () => {
+/**
+ * `history` switches this view to Meeting History: past meetings only, no
+ * create form or countdown. Members never see past flyers in the app.
+ */
+const Meetings = ({ history = false }) => {
   const token = Cookies.get("adminAccessToken");
 
   const [meetings, setMeetings] = useState([]);
@@ -67,8 +72,9 @@ const Meetings = () => {
 
   useEffect(() => {
     fetchMeetings();
-    fetchChapters();
-  }, []);
+    if (!history) fetchChapters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -104,7 +110,7 @@ const Meetings = () => {
   const fetchMeetings = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${apiUrl}/meetings/admin/all`, {
+      const res = await axios.get(`${apiUrl}/meetings/admin/${history ? "history" : "all"}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMeetings(res.data.data || []);
@@ -222,17 +228,19 @@ const Meetings = () => {
   const upcomingCount = meetings.filter(
     (m) => new Date(m.meetingDateTime).getTime() > Date.now()
   ).length;
+  const totalSeatsBooked = meetings.reduce((sum, m) => sum + (m.bookingCount || 0), 0);
 
   return (
     <div className="meetings-container">
       {/* Hero Banner */}
       <div className="meetings-hero-banner">
         <div className="hero-content">
-          <div className="hero-badge">Meeting Management</div>
-          <h1>Schedule &amp; Track Chapter Meetings</h1>
+          <div className="hero-badge">{history ? "Meeting History" : "Meeting Management"}</div>
+          <h1>{history ? "Past Chapter Meetings" : <>Schedule &amp; Track Chapter Meetings</>}</h1>
           <p>
-            Create meetings, notify chapter members instantly, and track seat
-            bookings in real time.
+            {history
+              ? "Meetings whose date has passed. Their flyers are hidden from members and archived here with final seat bookings."
+              : "Create meetings, notify chapter members instantly, and track seat bookings in real time."}
           </p>
         </div>
         <div className="hero-stats-grid">
@@ -241,17 +249,17 @@ const Meetings = () => {
               <Calendar size={24} />
             </div>
             <div className="stat-info">
-              <span className="stat-label">Total Meetings</span>
+              <span className="stat-label">{history ? "Past Meetings" : "Total Meetings"}</span>
               <strong className="stat-value">{meetings.length}</strong>
             </div>
           </div>
           <div className="hero-stat">
             <div className="stat-icon upcoming-count">
-              <Clock size={24} />
+              {history ? <Users size={24} /> : <Clock size={24} />}
             </div>
             <div className="stat-info">
-              <span className="stat-label">Upcoming</span>
-              <strong className="stat-value">{upcomingCount}</strong>
+              <span className="stat-label">{history ? "Seats Booked" : "Upcoming"}</span>
+              <strong className="stat-value">{history ? totalSeatsBooked : upcomingCount}</strong>
             </div>
           </div>
           <div className="hero-stat">
@@ -269,17 +277,21 @@ const Meetings = () => {
       {/* Header */}
       <div className="meetings-header">
         <div className="header-content">
-          <h2>All Meetings</h2>
-          <p className="header-subtitle">View and manage all scheduled meetings</p>
+          <h2>{history ? "Meeting History" : "Upcoming Meetings"}</h2>
+          <p className="header-subtitle">
+            {history ? "Past meeting flyers and their bookings" : "View and manage all scheduled meetings"}
+          </p>
         </div>
-        <button className="btn-create-meeting" onClick={() => setShowForm(!showForm)}>
-          <Plus size={18} />
-          New Meeting
-        </button>
+        {!history && (
+          <button className="btn-create-meeting" onClick={() => setShowForm(!showForm)}>
+            <Plus size={18} />
+            New Meeting
+          </button>
+        )}
       </div>
 
       {/* Create Form */}
-      {showForm && (
+      {!history && showForm && (
         <div className="meeting-form-card">
           <h3>Create New Meeting</h3>
           {message && <div className="alert-success">{message}</div>}
@@ -433,9 +445,13 @@ const Meetings = () => {
         </div>
       ) : meetings.length === 0 ? (
         <div className="empty-container">
-          <AlertCircle size={48} />
-          <h3>No meetings scheduled</h3>
-          <p>Click 'New Meeting' to schedule your first chapter meeting.</p>
+          {history ? <History size={48} /> : <AlertCircle size={48} />}
+          <h3>{history ? "No past meetings yet" : "No upcoming meetings"}</h3>
+          <p>
+            {history
+              ? "Meetings appear here automatically once their date and time have passed."
+              : "Click 'New Meeting' to schedule your next chapter meeting."}
+          </p>
         </div>
       ) : (
         <div className="meetings-grid">
@@ -475,7 +491,11 @@ const Meetings = () => {
                   </span>
                 </div>
 
-                <MeetingCountdown targetDateTime={meeting.meetingDateTime} />
+                {history ? (
+                  <div className="meeting-countdown ended">Meeting completed</div>
+                ) : (
+                  <MeetingCountdown targetDateTime={meeting.meetingDateTime} />
+                )}
               </div>
 
               <div className="card-footer">
@@ -523,7 +543,10 @@ const Meetings = () => {
                         <tr key={row.bookingId}>
                           <td>{row.memberName}</td>
                           <td>{row.city}</td>
-                          <td>{row.chapterName}</td>
+                          <td>
+                            {row.chapterName}
+                            {row.isCrossChapter && <span className="cross-chapter-badge">Cross Chapter</span>}
+                          </td>
                           <td className="mono">{row.transactionId}</td>
                           <td>₹{row.amountPaid.toLocaleString("en-IN")}</td>
                         </tr>

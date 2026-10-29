@@ -51,6 +51,15 @@ const Users = () => {
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceError, setInvoiceError] = useState('');
   const [invoiceData, setInvoiceData] = useState(null);
+  // Object URL for the fetched PDF. The backend sends X-Frame-Options: SAMEORIGIN,
+  // so the raw /uploads URL can't be framed from the admin origin — a blob URL can.
+  const [invoiceBlobUrl, setInvoiceBlobUrl] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (invoiceBlobUrl) URL.revokeObjectURL(invoiceBlobUrl);
+    };
+  }, [invoiceBlobUrl]);
 
   useEffect(() => {
     fetchUsers();
@@ -283,7 +292,11 @@ const Users = () => {
       );
 
       if (response.data.success) {
-        setInvoiceData(response.data.data);
+        const data = response.data.data;
+        const pdfResponse = await axios.get(data.pdfUrl, { responseType: 'blob' });
+        const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
+        setInvoiceBlobUrl(URL.createObjectURL(pdfBlob));
+        setInvoiceData(data);
       } else {
         setInvoiceError(response.data.message || 'No invoice found for this user');
       }
@@ -300,6 +313,7 @@ const Users = () => {
     setShowInvoiceModal(false);
     setInvoiceData(null);
     setInvoiceError('');
+    setInvoiceBlobUrl('');
   };
 
   const getInitials = (name = '') =>
@@ -687,9 +701,9 @@ const Users = () => {
                   <p>{invoiceError}</p>
                 </div>
               )}
-              {!invoiceLoading && !invoiceError && invoiceData?.pdfUrl && (
+              {!invoiceLoading && !invoiceError && invoiceBlobUrl && (
                 <iframe
-                  src={invoiceData.pdfUrl}
+                  src={`${invoiceBlobUrl}#toolbar=0&navpanes=0&view=Fit&zoom=page-fit`}
                   title="Invoice PDF"
                   className="invoice-iframe"
                 />

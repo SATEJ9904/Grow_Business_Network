@@ -43,8 +43,8 @@ android {
         applicationId "com.gbnsocialassociation"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.0.5"
+        versionCode 8
+        versionName "1.0.7"
     }
 
     // ✅ APK Split for smaller APKs (disabled for App Bundle builds — a bundle

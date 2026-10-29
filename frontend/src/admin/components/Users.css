@@ -788,9 +788,11 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  width: 620px;
-  max-width: 92vw;
-  height: min(87vh, 877px);
+  /* Sized so one A4 page (1 : 1.414) fills the body below the ~64px header */
+  height: 94vh;
+  width: calc((94vh - 64px) * 0.7071);
+  min-width: 420px;
+  max-width: 94vw;
 }
 
 .invoice-modal-header {
@@ -903,6 +905,7 @@
 
   .invoice-modal {
     width: 100%;
+    min-width: 0;
     height: 85vh;
   }
 

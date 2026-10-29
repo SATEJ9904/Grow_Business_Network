@@ -16,6 +16,7 @@ import {
   Calendar,
   Bell,
   Shield,
+  History,
 } from "lucide-react";
 import DeletionRequests from "./components/DeletionRequests";
 import DashboardHome from "./components/DashboardHome";
@@ -210,6 +211,7 @@ const AdminDashboard = ({ onLogout }) => {
     users: "Users",
     chapters: "Chapters",
     meetings: "Meetings",
+    "meeting-history": "Meeting History",
     notifications: "Notifications",
     "create-member": "Create Member",
     "deletion-requests": "Deletion Requests",
@@ -247,6 +249,12 @@ const AdminDashboard = ({ onLogout }) => {
       id: "meetings",
       label: "Meetings",
       icon: <Calendar size={20} />,
+    },
+
+    {
+      id: "meeting-history",
+      label: "Meeting History",
+      icon: <History size={20} />,
     },
 
     {
@@ -417,6 +425,11 @@ const AdminDashboard = ({ onLogout }) => {
           {currentPage === "meetings" && (
             <div className="admin-page-container">
               <Meetings />
+            </div>
+          )}
+          {currentPage === "meeting-history" && (
+            <div className="admin-page-container">
+              <Meetings key="history" history />
             </div>
           )}
           {currentPage === "notifications" && (

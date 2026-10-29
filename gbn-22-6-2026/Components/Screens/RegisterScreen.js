@@ -29,6 +29,7 @@ import {
   getFriendlyErrorMessage,
 } from '../utils/guards';
 import KeyboardScreen from '../KeyboardScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // The registration fee is never hardcoded here - it's fetched from
 // GET /api/payment/registration-fee, which computes it from the backend's
@@ -46,6 +47,7 @@ const PASSWORD_MIN_LENGTH = 6;
 
 export default function RegisterScreen({ navigation }) {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -849,6 +851,19 @@ export default function RegisterScreen({ navigation }) {
   const guardedCloseOtpModal = useGuardedAction(closeOtpModal, 250);
   const guardedVerifyOtp = useGuardedAction(verifyOtp);
 
+
+  const STEP_META = [
+    { title: 'Personal Details', icon: 'person-outline' },
+    { title: 'Business Details', icon: 'business-outline' },
+    { title: 'Account Setup', icon: 'lock-closed-outline' },
+    { title: 'Registration Fee', icon: 'card-outline' },
+  ];
+  const currentStep = STEP_META[step - 1];
+
+  const selectedChapterName = form.chapterId
+    ? filteredChapters.find(ch => ch._id === form.chapterId)?.name
+    : '';
+
   return (
     <ImageBackground
       source={require('../Images/bgimage2.png')}
@@ -858,396 +873,506 @@ export default function RegisterScreen({ navigation }) {
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="light-content"
+        barStyle="dark-content"
       />
 
       <KeyboardScreen>
-      <Text style={styles.header}>Create Account</Text>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + 24,
+              paddingBottom: insets.bottom + 24,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.header}>Create Account</Text>
+          <Text style={styles.subHeader}>
+            Step {step} of {STEP_META.length}
+          </Text>
 
-      <Animated.View
-        style={[styles.card, { transform: [{ translateX: slideAnim }] }]}
-      >
-        {step === 1 && (
-          <>
-            <Text style={styles.title}>👤 Personal Details</Text>
-
-            <TextInput
-              placeholder="Full Name"
-              placeholderTextColor="#000"
-              style={styles.input}
-              value={form.name}
-              onChangeText={v => handleChange('name', v)}
-            />
-            {errors.name ? <Text style={styles.error}>{errors.name}</Text> : null}
-
-            <TextInput
-              placeholder="Email Address"
-              placeholderTextColor="#000"
-              style={styles.input}
-              value={form.email}
-              onChangeText={v => handleChange('email', v)}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
-
-            {!otpVerified && (
-              <TouchableOpacity
-                style={[styles.button, otpLoading && styles.disabledButton]}
-                onPress={guardedSendOtp}
-                disabled={otpLoading}
-              >
-                <Text style={styles.buttonText}>
-                  {otpLoading ? 'Sending OTP...' : 'Verify Email'}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {otpError ? <Text style={styles.error}>{otpError}</Text> : null}
-
-            {otpVerified && (
-              <Text style={styles.success}>✔ Email Verified</Text>
-            )}
-
-            <TextInput
-              placeholder="Mobile Number"
-              placeholderTextColor="#000000"
-              style={styles.input}
-              keyboardType="numeric"
-              maxLength={10}
-              value={form.mobile}
-              onChangeText={v =>
-                handleChange('mobile', v.replace(/[^0-9]/g, '').slice(0, 10))
-              }
-            />
-            {errors.mobile ? <Text style={styles.error}>{errors.mobile}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.button, !isStep1Valid() && styles.disabledButton]}
-              disabled={!isStep1Valid()}
-              onPress={guardedNextStep}
-            >
-              <Text style={styles.buttonText}>Next →</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {step === 2 && (
-          <ScrollView
-            style={{ flex: 1 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Text style={styles.title}>🏢 Business Details</Text>
-
-            <TextInput
-              placeholder="Company Name"
-              placeholderTextColor="#000000"
-              style={styles.input}
-              value={form.companyName}
-              onChangeText={v => handleChange('companyName', v)}
-            />
-            {errors.companyName ? (
-              <Text style={styles.error}>{errors.companyName}</Text>
-            ) : null}
-
-            <TouchableOpacity style={styles.upload} onPress={guardedPickImage}>
-              <Text>
-                {logo ? '✔ Logo Selected' : 'Upload Company Logo (optional)'}
-              </Text>
-            </TouchableOpacity>
-
-            {logo?.uri ? (
-              <Image
-                source={{ uri: logo.uri }}
-                style={styles.logoPreview}
-                resizeMode="contain"
+          <View style={styles.progressRow}>
+            {STEP_META.map((s, i) => (
+              <View
+                key={s.title}
+                style={[
+                  styles.progressSegment,
+                  i < step && styles.progressSegmentActive,
+                  i === STEP_META.length - 1 && { marginRight: 0 },
+                ]}
               />
-            ) : null}
+            ))}
+          </View>
 
-            {/* CITY DROPDOWN */}
+          <Animated.View
+            style={[styles.card, { transform: [{ translateX: slideAnim }] }]}
+          >
+            <View style={styles.titleRow}>
+              <View style={styles.titleIcon}>
+                <Icon name={currentStep.icon} size={20} color="#0B3D2E" />
+              </View>
+              <Text style={styles.title}>{currentStep.title}</Text>
+            </View>
 
-            <TouchableOpacity
-              style={styles.dropdownButton}
-              onPress={guardedOpenCityDropdown}
-            >
-              <Text style={styles.dropdownButtonText}>
-                {selectedCity || 'Select City'}
-              </Text>
-            </TouchableOpacity>
+            {/* STEP 1 - PERSONAL DETAILS */}
+            {step === 1 && (
+              <>
+                <View style={[styles.field, errors.name && styles.fieldError]}>
+                  <Icon name="person-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Full Name"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    style={styles.fieldInput}
+                    value={form.name}
+                    onChangeText={v => handleChange('name', v)}
+                  />
+                </View>
+                {errors.name ? <Text style={styles.error}>{errors.name}</Text> : null}
 
-            {cityDropdownVisible && (
-              <View style={styles.dropdownPanel}>
-                <Text style={styles.dropdownTitle}>Select City</Text>
-
-                <ScrollView
-                  style={styles.dropdownScroll}
-                  keyboardShouldPersistTaps="handled"
-                  nestedScrollEnabled
+                <View
+                  style={[
+                    styles.field,
+                    errors.email && styles.fieldError,
+                    otpVerified && styles.fieldVerified,
+                  ]}
                 >
-                  {cities.map((city, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.dropdownItem}
-                      onPress={() => guardedHandleCitySelect(city)}
-                    >
-                      <Text style={styles.dropdownItemText}>{city}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                  <Icon name="mail-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Email Address"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    style={styles.fieldInput}
+                    value={form.email}
+                    onChangeText={v => handleChange('email', v)}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                  {otpVerified && (
+                    <Icon name="checkmark-circle" size={20} color="#1f8a4c" />
+                  )}
+                </View>
+                {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
+
+                {!otpVerified && (
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryButton,
+                      otpLoading && styles.disabledButton,
+                    ]}
+                    onPress={guardedSendOtp}
+                    disabled={otpLoading}
+                  >
+                    {otpLoading ? (
+                      <ActivityIndicator color="#0B3D2E" />
+                    ) : (
+                      <Text style={styles.secondaryButtonText}>Verify Email</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {otpError ? <Text style={styles.error}>{otpError}</Text> : null}
+
+                {otpVerified && (
+                  <Text style={styles.success}>✔ Email Verified</Text>
+                )}
+
+                <View style={[styles.field, errors.mobile && styles.fieldError]}>
+                  <Icon name="call-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Mobile Number"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    style={styles.fieldInput}
+                    keyboardType="numeric"
+                    maxLength={10}
+                    value={form.mobile}
+                    onChangeText={v =>
+                      handleChange('mobile', v.replace(/[^0-9]/g, '').slice(0, 10))
+                    }
+                  />
+                </View>
+                {errors.mobile ? <Text style={styles.error}>{errors.mobile}</Text> : null}
 
                 <TouchableOpacity
-                  style={styles.dropdownClose}
-                  onPress={guardedCloseCityDropdown}
+                  style={[styles.button, !isStep1Valid() && styles.disabledButton]}
+                  disabled={!isStep1Valid()}
+                  onPress={guardedNextStep}
                 >
-                  <Text style={styles.buttonText}>Close</Text>
+                  <Text style={styles.buttonText}>Next →</Text>
                 </TouchableOpacity>
-              </View>
+              </>
             )}
 
-            {chaptersLoading ? (
+            {/* STEP 2 - BUSINESS DETAILS */}
+            {step === 2 && (
               <>
-                <Text style={styles.loading}>Loading chapters...</Text>
-                {showChaptersSlowNotice && (
-                  <Text style={styles.loading}>
-                    Still working on it — this is taking longer than
-                    expected. Please check your connection.
-                  </Text>
-                )}
-              </>
-            ) : chaptersError ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>⚠️ {chaptersError}</Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={guardedFetchChapters}
+                <View
+                  style={[styles.field, errors.companyName && styles.fieldError]}
                 >
-                  <Text style={styles.buttonText}>Retry</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.dropdownButton}
-                  onPress={guardedOpenChapterDropdown}
-                >
-                  <Text style={styles.dropdownButtonText}>
-                    {!selectedCity
-                      ? 'Select City First'
-                      : form.chapterId
-                      ? filteredChapters.find(ch => ch._id === form.chapterId)
-                          ?.name || 'Select Chapter'
-                      : 'Select Chapter'}
+                  <Icon name="business-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Company Name"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    style={styles.fieldInput}
+                    value={form.companyName}
+                    onChangeText={v => handleChange('companyName', v)}
+                  />
+                </View>
+                {errors.companyName ? (
+                  <Text style={styles.error}>{errors.companyName}</Text>
+                ) : null}
+
+                <TouchableOpacity style={styles.upload} onPress={guardedPickImage}>
+                  {logo?.uri ? (
+                    <Image
+                      source={{ uri: logo.uri }}
+                      style={styles.logoPreview}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Icon name="cloud-upload-outline" size={26} color="#0B3D2E" />
+                  )}
+                  <Text style={styles.uploadText}>
+                    {logo ? 'Change Company Logo' : 'Upload Company Logo'}
                   </Text>
+                  {!logo && <Text style={styles.uploadHint}>Optional</Text>}
                 </TouchableOpacity>
 
-                {chapterDropdownVisible && (
+                {/* CITY DROPDOWN */}
+                <TouchableOpacity
+                  style={styles.field}
+                  onPress={
+                    cityDropdownVisible
+                      ? guardedCloseCityDropdown
+                      : guardedOpenCityDropdown
+                  }
+                >
+                  <Icon name="location-outline" size={18} style={styles.fieldIcon} />
+                  <Text
+                    style={[
+                      styles.fieldValue,
+                      !selectedCity && styles.fieldPlaceholder,
+                    ]}
+                  >
+                    {selectedCity || 'Select City'}
+                  </Text>
+                  <Icon
+                    name={cityDropdownVisible ? 'chevron-up' : 'chevron-down'}
+                    size={18}
+                    color="#4a5a52"
+                  />
+                </TouchableOpacity>
+
+                {cityDropdownVisible && (
                   <View style={styles.dropdownPanel}>
-                    <Text style={styles.dropdownTitle}>Select a Chapter</Text>
                     <ScrollView
                       style={styles.dropdownScroll}
                       keyboardShouldPersistTaps="handled"
                       nestedScrollEnabled
                     >
-                      {filteredChapters && filteredChapters.length > 0 ? (
-                        filteredChapters.map(ch => (
+                      {cities.length > 0 ? (
+                        cities.map((city, index) => (
                           <TouchableOpacity
-                            key={ch._id}
+                            key={index}
                             style={[
                               styles.dropdownItem,
-                              form.chapterId === ch._id &&
-                                styles.dropdownItemSelected,
+                              selectedCity === city && styles.dropdownItemSelected,
                             ]}
-                            onPress={() => guardedSelectChapter(ch)}
+                            onPress={() => guardedHandleCitySelect(city)}
                           >
                             <Text
                               style={[
                                 styles.dropdownItemText,
-                                form.chapterId === ch._id &&
+                                selectedCity === city &&
                                   styles.dropdownItemTextSelected,
                               ]}
                             >
-                              {ch.name} - {ch.city}
+                              {city}
                             </Text>
                           </TouchableOpacity>
                         ))
                       ) : (
-                        <Text style={styles.noChapers}>
-                          No chapters available
-                        </Text>
+                        <Text style={styles.noChapers}>No cities available</Text>
                       )}
                     </ScrollView>
-                    <TouchableOpacity
-                      style={styles.dropdownClose}
-                      onPress={guardedCloseChapterDropdown}
-                    >
-                      <Text style={styles.buttonText}>Close</Text>
-                    </TouchableOpacity>
                   </View>
                 )}
+
+                {chaptersLoading ? (
+                  <>
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator color="#0B3D2E" size="small" />
+                      <Text style={styles.loading}>Loading chapters...</Text>
+                    </View>
+                    {showChaptersSlowNotice && (
+                      <Text style={styles.loading}>
+                        Still working on it — this is taking longer than
+                        expected. Please check your connection.
+                      </Text>
+                    )}
+                  </>
+                ) : chaptersError ? (
+                  <View style={styles.errorBox}>
+                    <Text style={styles.errorText}>⚠️ {chaptersError}</Text>
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={guardedFetchChapters}
+                    >
+                      <Text style={styles.buttonText}>Retry</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.field, !selectedCity && styles.fieldDisabled]}
+                      onPress={
+                        chapterDropdownVisible
+                          ? guardedCloseChapterDropdown
+                          : guardedOpenChapterDropdown
+                      }
+                    >
+                      <Icon name="people-outline" size={18} style={styles.fieldIcon} />
+                      <Text
+                        style={[
+                          styles.fieldValue,
+                          !selectedChapterName && styles.fieldPlaceholder,
+                        ]}
+                      >
+                        {!selectedCity
+                          ? 'Select City First'
+                          : selectedChapterName || 'Select Chapter'}
+                      </Text>
+                      <Icon
+                        name={chapterDropdownVisible ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color="#4a5a52"
+                      />
+                    </TouchableOpacity>
+
+                    {chapterDropdownVisible && (
+                      <View style={styles.dropdownPanel}>
+                        <ScrollView
+                          style={styles.dropdownScroll}
+                          keyboardShouldPersistTaps="handled"
+                          nestedScrollEnabled
+                        >
+                          {filteredChapters && filteredChapters.length > 0 ? (
+                            filteredChapters.map(ch => (
+                              <TouchableOpacity
+                                key={ch._id}
+                                style={[
+                                  styles.dropdownItem,
+                                  form.chapterId === ch._id &&
+                                    styles.dropdownItemSelected,
+                                ]}
+                                onPress={() => guardedSelectChapter(ch)}
+                              >
+                                <Text
+                                  style={[
+                                    styles.dropdownItemText,
+                                    form.chapterId === ch._id &&
+                                      styles.dropdownItemTextSelected,
+                                  ]}
+                                >
+                                  {ch.name} - {ch.city}
+                                </Text>
+                              </TouchableOpacity>
+                            ))
+                          ) : (
+                            <Text style={styles.noChapers}>
+                              No chapters available
+                            </Text>
+                          )}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <View style={styles.row}>
+                  <TouchableOpacity style={styles.back} onPress={guardedPrevStep}>
+                    <Text style={styles.backText}>Back</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.button,
+                      styles.rowButton,
+                      !isStep2Valid() && styles.disabledButton,
+                    ]}
+                    disabled={!isStep2Valid()}
+                    onPress={guardedNextStep}
+                  >
+                    <Text style={styles.buttonText}>Next →</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
 
-            <View style={styles.row}>
-              <TouchableOpacity style={styles.back} onPress={guardedPrevStep}>
-                <Text style={styles.backText}>Back</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  !isStep2Valid() && styles.disabledButton,
-                ]}
-                disabled={!isStep2Valid()}
-                onPress={guardedNextStep}
-              >
-                <Text style={styles.buttonText}>Next</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        )}
-
-        {/* STEP 3 */}
-        {step === 4 && (
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>💳 Registration Fee</Text>
-
-            <View style={styles.feeCard}>
-              {feeLoading ? (
-                <ActivityIndicator color="#0B3D2E" />
-              ) : feeError ? (
-                <TouchableOpacity onPress={fetchRegistrationFee}>
-                  <Text style={styles.feeErrorText}>{feeError} Tap to retry.</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.feeRow}>
-                  <Text style={styles.feeLabel}>GBN Membership Fee</Text>
-                  <Text style={styles.feeValue}>₹{registrationFee.toFixed(2)}</Text>
+            {/* STEP 3 - ACCOUNT SETUP */}
+            {step === 3 && (
+              <>
+                <View style={styles.field}>
+                  <Icon name="lock-closed-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    secureTextEntry={!showPassword}
+                    style={styles.fieldInput}
+                    value={form.password}
+                    onChangeText={v => handleChange('password', v)}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={guardedToggleShowPassword}
+                  >
+                    <Icon
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#4a5a52"
+                    />
+                  </TouchableOpacity>
                 </View>
-              )}
-            </View>
 
-            <View style={styles.secureBadge}>
-              <Icon name="shield-checkmark" size={16} color="#0B3D2E" />
-              <Text style={styles.secureBadgeText}>
-                Secured by Razorpay — Cards, UPI, Netbanking & Wallets
-              </Text>
-            </View>
+                <View style={styles.field}>
+                  <Icon name="lock-closed-outline" size={18} style={styles.fieldIcon} />
+                  <TextInput
+                    placeholder="Confirm Password"
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                    secureTextEntry={!showConfirmPassword}
+                    style={styles.fieldInput}
+                    value={form.confirmPassword}
+                    onChangeText={v => handleChange('confirmPassword', v)}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={guardedToggleShowConfirmPassword}
+                  >
+                    <Icon
+                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#4a5a52"
+                    />
+                  </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity
-              style={[
-                styles.payNowButton,
-                (paymentProcessing || feeLoading || !registrationFee) &&
-                  styles.disabledButton,
-              ]}
-              onPress={guardedHandlePayment}
-              disabled={paymentProcessing || feeLoading || !registrationFee}
-            >
-              <Text style={styles.payNowText}>
-                {paymentProcessing
-                  ? 'Processing...'
-                  : feeLoading
-                  ? 'Loading fee...'
-                  : !registrationFee
-                  ? 'Fee unavailable'
-                  : `Pay ₹${registrationFee.toFixed(2)} & Register`}
-              </Text>
-            </TouchableOpacity>
+                {form.password && form.password.length < PASSWORD_MIN_LENGTH ? (
+                  <Text style={styles.error}>
+                    Password must be at least {PASSWORD_MIN_LENGTH} characters
+                  </Text>
+                ) : null}
+                {form.password &&
+                form.confirmPassword &&
+                form.password !== form.confirmPassword ? (
+                  <Text style={styles.error}>❌ Passwords don't match</Text>
+                ) : null}
+                {isStep4Valid() && (
+                  <Text style={styles.success}>✅ Passwords match</Text>
+                )}
 
-            <View style={styles.row}>
-              <TouchableOpacity
-                style={styles.back}
-                onPress={guardedPrevStep}
-                disabled={paymentProcessing}
-              >
-                <Text style={styles.backText}>Back</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        )}
+                <View style={styles.row}>
+                  <TouchableOpacity style={styles.back} onPress={guardedPrevStep}>
+                    <Text style={styles.backText}>Back</Text>
+                  </TouchableOpacity>
 
-        {/* STEP 4 */}
-        {step === 3 && (
-          <>
-            <Text style={styles.title}>🔐 Account Setup</Text>
-
-            <View style={styles.inputWithIcon}>
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor="#000"
-                secureTextEntry={!showPassword}
-                style={styles.inputWithIconInput}
-                value={form.password}
-                onChangeText={v => handleChange('password', v)}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={guardedToggleShowPassword}
-              >
-                <Icon
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={20}
-                  color="#000"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.inputWithIcon}>
-              <TextInput
-                placeholder="Confirm Password"
-                placeholderTextColor="#000"
-                secureTextEntry={!showConfirmPassword}
-                style={styles.inputWithIconInput}
-                value={form.confirmPassword}
-                onChangeText={v => handleChange('confirmPassword', v)}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={guardedToggleShowConfirmPassword}
-              >
-                <Icon
-                  name={showConfirmPassword ? 'eye-off' : 'eye'}
-                  size={20}
-                  color="#000"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {form.password && form.password.length < PASSWORD_MIN_LENGTH && (
-              <Text style={styles.error}>
-                Password must be at least {PASSWORD_MIN_LENGTH} characters
-              </Text>
-            )}
-            {form.password &&
-              form.confirmPassword &&
-              form.password !== form.confirmPassword && (
-                <Text style={styles.error}>❌ Passwords don't match</Text>
-              )}
-            {isStep4Valid() && (
-              <Text style={styles.success}>✅ Passwords match</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.button,
+                      styles.rowButton,
+                      !isStep4Valid() && styles.disabledButton,
+                    ]}
+                    disabled={!isStep4Valid()}
+                    onPress={guardedNextStep}
+                  >
+                    <Text style={styles.buttonText}>Next →</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
             )}
 
-            <View style={styles.row}>
-              <TouchableOpacity style={styles.back} onPress={guardedPrevStep}>
-                <Text style={styles.backText}>Back</Text>
-              </TouchableOpacity>
+            {/* STEP 4 - REGISTRATION FEE */}
+            {step === 4 && (
+              <>
+                <View style={styles.feeCard}>
+                  {feeLoading ? (
+                    <ActivityIndicator color="#0B3D2E" />
+                  ) : feeError || !registrationFee ? (
+                    <TouchableOpacity onPress={fetchRegistrationFee}>
+                      <Text style={styles.feeErrorText}>
+                        {feeError || 'Unable to load the registration fee.'} Tap
+                        to retry.
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <>
+                      <View style={styles.feeRow}>
+                        <Text style={styles.feeLabel}>GBN Membership Fee</Text>
+                        <Text style={styles.feeValue}>
+                          ₹{registrationFee.toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={styles.feeDivider} />
+                      <View style={styles.feeRow}>
+                        <Text style={styles.feeTotalLabel}>Total Payable</Text>
+                        <Text style={styles.feeTotalValue}>
+                          ₹{registrationFee.toFixed(2)}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  !isStep4Valid() && styles.disabledButton,
-                ]}
-                disabled={!isStep4Valid()}
-                onPress={guardedNextStep}
-              >
-                <Text style={styles.buttonText}>Next</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </Animated.View>
+                <View style={styles.secureBadge}>
+                  <Icon name="shield-checkmark" size={16} color="#0B3D2E" />
+                  <Text style={styles.secureBadgeText}>
+                    Secured by Razorpay — Cards, UPI, Netbanking & Wallets
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.payNowButton,
+                    (paymentProcessing || feeLoading || !registrationFee) &&
+                      styles.disabledButton,
+                  ]}
+                  onPress={guardedHandlePayment}
+                  disabled={paymentProcessing || feeLoading || !registrationFee}
+                >
+                  <Text style={styles.payNowText}>
+                    {paymentProcessing
+                      ? 'Processing...'
+                      : feeLoading
+                      ? 'Loading fee...'
+                      : !registrationFee
+                      ? 'Fee unavailable'
+                      : `Pay ₹${registrationFee.toFixed(2)} & Register`}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.back, styles.backFull]}
+                  onPress={guardedPrevStep}
+                  disabled={paymentProcessing}
+                >
+                  <Text style={styles.backText}>Back</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </Animated.View>
+
+          <TouchableOpacity
+            style={styles.loginLink}
+            onPress={() => navigation.navigate('Login')}
+            disabled={paymentProcessing || loading}
+          >
+            <Text style={styles.loginLinkText}>
+              Already have an account?{' '}
+              <Text style={styles.loginLinkBold}>Log In</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </KeyboardScreen>
 
       {/* OTP MODAL */}
@@ -1260,29 +1385,43 @@ export default function RegisterScreen({ navigation }) {
         <View style={styles.modal}>
           <View style={styles.modalBox}>
             <TouchableOpacity
-              style={{ alignSelf: 'flex-end', marginBottom: 10 }}
+              style={styles.modalClose}
               onPress={guardedCloseOtpModal}
             >
-              <Text style={{ fontSize: 24, color: '#666' }}>×</Text>
+              <Icon name="close" size={24} color="#666" />
             </TouchableOpacity>
 
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Enter OTP</Text>
+            <Text style={styles.modalTitle}>Enter OTP</Text>
+            <Text style={styles.modalSubtitle}>
+              We sent a code to {form.email}
+            </Text>
 
             {otpSuccessMessage ? (
               <Text style={styles.success}>{otpSuccessMessage}</Text>
             ) : null}
 
             <TextInput
-              style={styles.input}
-              placeholderTextColor="#000"
+              style={styles.otpInput}
+              placeholderTextColor={PLACEHOLDER_COLOR}
               value={form.otp}
               onChangeText={v => handleChange('otp', v)}
               keyboardType="numeric"
               placeholder="Enter OTP"
+              maxLength={6}
             />
 
-            <TouchableOpacity style={styles.button} onPress={guardedVerifyOtp}>
-              <Text style={styles.buttonText}>Verify</Text>
+            {verifyError ? <Text style={styles.error}>{verifyError}</Text> : null}
+
+            <TouchableOpacity
+              style={[styles.button, verifyLoading && styles.disabledButton]}
+              onPress={guardedVerifyOtp}
+              disabled={verifyLoading}
+            >
+              {verifyLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Verify</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -1291,11 +1430,11 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
+const PLACEHOLDER_COLOR = '#7b8a83';
+
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    padding: 20,
+    flex: 1,
     backgroundColor: '#e8f4ef',
   },
 
@@ -1303,19 +1442,52 @@ const styles = StyleSheet.create({
     opacity: 0.16,
   },
 
+  // flexGrow + center keeps the card vertically centered when it's short,
+  // while still letting it scroll when a step (or the keyboard) makes it tall.
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+
   header: {
-    color: '#000',
-    fontSize: 26,
+    color: '#0B3D2E',
+    fontSize: 28,
     textAlign: 'center',
-    marginBottom: 24,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
 
+  subHeader: {
+    color: '#4a5a52',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 6,
+  },
+
+  progressRow: {
+    flexDirection: 'row',
+    marginTop: 14,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+
+  progressSegment: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(11,61,46,0.15)',
+    marginRight: 6,
+  },
+
+  progressSegmentActive: {
+    backgroundColor: '#0B3D2E',
+  },
+
   card: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 28,
-    padding: 24,
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    borderRadius: 24,
+    padding: 22,
     shadowColor: '#0B3D2E',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
@@ -1325,29 +1497,83 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(11,61,46,0.08)',
   },
 
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+
+  titleIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e3f1ea',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
   title: {
     fontWeight: '800',
     fontSize: 20,
-    marginBottom: 14,
     color: '#0B3D2E',
   },
 
-  input: {
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#cde2d7',
     backgroundColor: '#f6fbf8',
-    padding: 14,
     borderRadius: 14,
     marginTop: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
+  },
+
+  fieldError: {
+    borderColor: '#e57373',
+  },
+
+  fieldVerified: {
+    borderColor: '#1f8a4c',
+  },
+
+  fieldDisabled: {
+    opacity: 0.6,
+  },
+
+  fieldIcon: {
+    color: '#0B3D2E',
+    marginRight: 10,
+  },
+
+  fieldInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 15,
     color: '#122620',
+  },
+
+  fieldValue: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#122620',
+  },
+
+  fieldPlaceholder: {
+    color: PLACEHOLDER_COLOR,
   },
 
   button: {
     backgroundColor: '#0B3D2E',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: 14,
     marginTop: 20,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#0B3D2E',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
@@ -1355,25 +1581,56 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
+  secondaryButton: {
+    borderWidth: 1.5,
+    borderColor: '#0B3D2E',
+    backgroundColor: '#ffffff',
+    paddingVertical: 13,
+    borderRadius: 14,
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  secondaryButtonText: {
+    color: '#0B3D2E',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+
   disabledButton: {
     backgroundColor: '#b8c7be',
+    borderColor: '#b8c7be',
     opacity: 0.7,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  rowButton: {
+    flex: 2,
   },
 
   back: {
+    flex: 1,
     backgroundColor: '#ffffff',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#0B3D2E',
-    padding: 14,
+    paddingVertical: 15,
     borderRadius: 14,
     marginTop: 20,
     marginRight: 10,
     alignItems: 'center',
   },
 
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  backFull: {
+    flex: 0,
+    marginRight: 0,
+    marginTop: 12,
   },
 
   buttonText: {
@@ -1390,222 +1647,214 @@ const styles = StyleSheet.create({
   },
 
   upload: {
-    borderWidth: 1,
-    borderColor: '#cde2d7',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#9cc3b0',
     backgroundColor: '#fbfdfb',
-    padding: 15,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
     borderRadius: 14,
     marginTop: 12,
     alignItems: 'center',
   },
 
-  success: {
-    color: 'green',
-    marginTop: 10,
-  },
-
-  error: {
-    color: 'red',
-    marginTop: 5,
-    fontSize: 12,
-  },
-
-  modal: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  modalBox: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 20,
-    width: '85%',
-    borderWidth: 2,
-    borderColor: '#0B3D2E',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 12,
-  },
-  chapterContainer: {
-    marginTop: 10,
-  },
-  chapterLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  uploadText: {
     color: '#0B3D2E',
-  },
-  chapterOption: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  selectedChapter: {
-    borderColor: '#0B3D2E',
-    backgroundColor: '#f0f8f0',
-  },
-  chapterText: {
+    fontWeight: '600',
     fontSize: 14,
+    marginTop: 6,
   },
-  loading: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 10,
-  },
-  confirmationText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
-    marginTop: 20,
-    marginBottom: 20,
+
+  uploadHint: {
+    color: PLACEHOLDER_COLOR,
+    fontSize: 12,
+    marginTop: 2,
   },
 
   logoPreview: {
-    width: '100%',
-    height: 120,
-    marginTop: 12,
-    borderRadius: 10,
-  },
-  dropdownButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginTop: 10,
-    backgroundColor: '#fff',
-    padding: 14,
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  dropdownOverlay: {
-    flex: 1,
-    backgroundColor: '#00000080',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  dropdownContent: {
-    backgroundColor: '#fff',
+    width: 90,
+    height: 90,
     borderRadius: 12,
-    maxHeight: '70%',
-    width: '100%',
-    paddingBottom: 10,
   },
+
+  success: {
+    color: '#1f8a4c',
+    marginTop: 10,
+    fontWeight: '600',
+  },
+
+  error: {
+    color: '#c62828',
+    marginTop: 5,
+    marginLeft: 4,
+    fontSize: 12,
+  },
+
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+
+  loading: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 8,
+  },
+
   dropdownPanel: {
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#d6e8de',
-    marginTop: 10,
-    padding: 12,
+    marginTop: 6,
+    paddingVertical: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 4,
   },
+
   dropdownScroll: {
-    maxHeight: 280,
-    marginTop: 8,
+    maxHeight: 220,
   },
-  dropdownTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    paddingBottom: 10,
-    color: '#0B3D2E',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
+
   dropdownItem: {
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
+
   dropdownItemSelected: {
     backgroundColor: '#f0f8f0',
     borderLeftWidth: 4,
     borderLeftColor: '#0B3D2E',
   },
+
   dropdownItemText: {
     fontSize: 15,
     color: '#333',
   },
+
   dropdownItemTextSelected: {
     color: '#0B3D2E',
     fontWeight: 'bold',
   },
-  dropdownClose: {
-    backgroundColor: '#0B3D2E',
-    padding: 12,
-    borderRadius: 10,
-    margin: 10,
-    alignItems: 'center',
-  },
-  inputWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginTop: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-  },
-  inputWithIconInput: {
-    flex: 1,
-    paddingVertical: 12,
-    color: '#122620',
-  },
+
   eyeButton: {
     padding: 8,
   },
-  eyeIcon: {
-    fontSize: 18,
-    color: '#555',
-  },
+
   noChapers: {
     textAlign: 'center',
     color: '#999',
     padding: 20,
   },
+
   errorBox: {
     backgroundColor: '#ffe6e6',
     borderWidth: 1,
     borderColor: '#ff6b6b',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
-    marginTop: 10,
+    marginTop: 12,
   },
+
   errorText: {
     color: '#c92a2a',
     fontSize: 14,
     marginBottom: 10,
   },
+
   retryButton: {
     backgroundColor: '#ff6b6b',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
+
+  loginLink: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  loginLinkText: {
+    color: '#4a5a52',
+    fontSize: 14,
+  },
+
+  loginLinkBold: {
+    color: '#0B3D2E',
+    fontWeight: '800',
+  },
+
+  // OTP MODAL
+  modal: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+
+  modalBox: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 20,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+
+  modalClose: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 4,
+    zIndex: 1,
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0B3D2E',
+  },
+
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#4a5a52',
+    marginTop: 6,
+  },
+
+  otpInput: {
+    borderWidth: 1,
+    borderColor: '#cde2d7',
+    backgroundColor: '#f6fbf8',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginTop: 16,
+    color: '#122620',
+    fontSize: 20,
+    letterSpacing: 6,
+    textAlign: 'center',
+  },
+
   // 💳 REGISTRATION FEE / RAZORPAY PAYMENT STYLES
   feeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 22,
-    marginTop: 10,
+    backgroundColor: '#f6fbf8',
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: '#E2ECE6',
-    elevation: 4,
-    shadowColor: '#0B3D2E',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
   },
 
   feeRow: {
@@ -1613,6 +1862,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 6,
+  },
+
+  feeDivider: {
+    height: 1,
+    backgroundColor: '#dbe8e1',
+    marginVertical: 6,
   },
 
   feeLabel: {
@@ -1626,6 +1881,18 @@ const styles = StyleSheet.create({
     color: '#122620',
   },
 
+  feeTotalLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0B3D2E',
+  },
+
+  feeTotalValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0B3D2E',
+  },
+
   feeErrorText: {
     fontSize: 14,
     color: '#b3261e',
@@ -1637,22 +1904,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
-    gap: 6,
+    paddingHorizontal: 4,
   },
 
   secureBadgeText: {
     color: '#4a5a52',
     fontSize: 12,
     marginLeft: 6,
+    flexShrink: 1,
   },
 
   payNowButton: {
-    backgroundColor: '#2F4F1E',
+    backgroundColor: '#0B3D2E',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 20,
-    shadowColor: '#2F4F1E',
+    marginTop: 18,
+    shadowColor: '#0B3D2E',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
     shadowRadius: 18,
