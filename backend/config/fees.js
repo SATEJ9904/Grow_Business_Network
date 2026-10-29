@@ -19,7 +19,8 @@ const getFeeBreakdown = () => {
   const baseAmount = baseAmountPaise / 100;
 
   const gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
-  const commission = Math.round(baseAmount * RAZORPAY_COMMISSION_RATE * 100) / 100;
+  // Commission is charged on the GST-inclusive amount (base + GST)
+  const commission = Math.round((baseAmount + gstAmount) * RAZORPAY_COMMISSION_RATE * 100) / 100;
   const commissionGst = Math.round(commission * RAZORPAY_COMMISSION_GST_RATE * 100) / 100;
 
   const totalAmount = Math.round((baseAmount + gstAmount + commission + commissionGst) * 100) / 100;

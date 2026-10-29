@@ -23,11 +23,7 @@ const getRegistrationFee = (req, res) => {
 
   return res.status(200).json({
     success: true,
-    data: {
-      totalAmount: feeBreakdown.totalAmount,
-      totalPaise: feeBreakdown.totalPaise,
-      currency: feeBreakdown.currency,
-    },
+    data: feeBreakdown,
   });
 };
 
