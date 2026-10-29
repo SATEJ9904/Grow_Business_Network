@@ -131,6 +131,14 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  // Re-fetch whenever the fee step opens so a fee changed on the backend
+  // shows up without restarting the app
+  useEffect(() => {
+    if (step === 4) {
+      fetchRegistrationFee();
+    }
+  }, [step]);
+
   useEffect(() => {
     console.log('otpModal state changed:', otpModal);
   }, [otpModal]);
@@ -1307,13 +1315,6 @@ export default function RegisterScreen({ navigation }) {
                     </TouchableOpacity>
                   ) : (
                     <>
-                      <View style={styles.feeRow}>
-                        <Text style={styles.feeLabel}>GBN Membership Fee</Text>
-                        <Text style={styles.feeValue}>
-                          ₹{registrationFee.toFixed(2)}
-                        </Text>
-                      </View>
-                      <View style={styles.feeDivider} />
                       <View style={styles.feeRow}>
                         <Text style={styles.feeTotalLabel}>Total Payable</Text>
                         <Text style={styles.feeTotalValue}>
