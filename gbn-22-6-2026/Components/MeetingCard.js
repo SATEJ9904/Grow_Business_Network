@@ -6,6 +6,7 @@ import { API_BASE_URL as BASE_URL, getAssetUrl } from './utils/apiConfig';
 import { useGuardedAction, getFriendlyErrorMessage } from './utils/guards';
 import { markPaymentInFlight, clearPaymentInFlight } from './utils/paymentGuard';
 import CountdownTimer from './CountdownTimer';
+import FlyerViewer from './FlyerViewer';
 
 /**
  * Shared meeting card used by both MeetingsScreen and NotificationsScreen
@@ -43,6 +44,7 @@ const MeetingCard = ({ meeting, onBooked, showNewBadge, collapsible = false }) =
   const [processing, setProcessing] = useState(false);
   const [flyerRatio, setFlyerRatio] = useState(DEFAULT_FLYER_RATIO);
   const [expanded, setExpanded] = useState(!collapsible);
+  const [flyerViewerOpen, setFlyerViewerOpen] = useState(false);
 
   useEffect(() => {
     const uri = getAssetUrl(meeting.flyerImage);
@@ -219,8 +221,8 @@ const MeetingCard = ({ meeting, onBooked, showNewBadge, collapsible = false }) =
     );
   }
 
-  const FlyerWrapper = collapsible ? TouchableOpacity : View;
-  const flyerWrapperProps = collapsible ? { activeOpacity: 0.9, onPress: toggleExpanded } : {};
+  const OverlayWrapper = collapsible ? TouchableOpacity : View;
+  const overlayWrapperProps = collapsible ? { activeOpacity: 0.9, onPress: toggleExpanded } : {};
 
   return (
     <View style={styles.card}>
@@ -230,17 +232,25 @@ const MeetingCard = ({ meeting, onBooked, showNewBadge, collapsible = false }) =
         </View>
       )}
 
-      <FlyerWrapper style={[styles.flyerWrap, { aspectRatio: flyerRatio }]} {...flyerWrapperProps}>
-        <Image source={{ uri: getAssetUrl(meeting.flyerImage) }} style={styles.flyer} resizeMode="cover" />
-        <View style={styles.flyerOverlay}>
+      <View style={[styles.flyerWrap, { aspectRatio: flyerRatio }]}>
+        <TouchableOpacity activeOpacity={0.9} style={styles.flyer} onPress={() => setFlyerViewerOpen(true)}>
+          <Image source={{ uri: getAssetUrl(meeting.flyerImage) }} style={styles.flyer} resizeMode="cover" />
+        </TouchableOpacity>
+        <OverlayWrapper style={styles.flyerOverlay} {...overlayWrapperProps}>
           <Text style={styles.meetingName} numberOfLines={2}>
             {meeting.name}
           </Text>
           <Text style={styles.chapterBadge}>
             {meeting.chapterName} • {meeting.city}
           </Text>
-        </View>
-      </FlyerWrapper>
+        </OverlayWrapper>
+      </View>
+
+      <FlyerViewer
+        visible={flyerViewerOpen}
+        uri={getAssetUrl(meeting.flyerImage)}
+        onClose={() => setFlyerViewerOpen(false)}
+      />
 
       <View style={styles.content}>
         <View style={styles.detailRow}>

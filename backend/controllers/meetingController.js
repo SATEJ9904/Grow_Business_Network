@@ -103,39 +103,68 @@ const createMeeting = async (req, res) => {
 };
 
 /**
- * List all meetings with a live booking count + subtotal per meeting.
+ * Attach a live booking count + subtotal to each meeting matched by `filter`.
+ */
+const withBookingTotals = async (filter, sort) => {
+  const meetings = await Meeting.find({ isActive: true, ...filter }).sort(sort);
+
+  const totals = await MeetingBooking.aggregate([
+    { $match: { status: "paid", meetingId: { $in: meetings.map((m) => m._id) } } },
+    {
+      $group: {
+        _id: "$meetingId",
+        bookingCount: { $sum: 1 },
+        subtotal: { $sum: "$meetingFee" },
+      },
+    },
+  ]);
+  const totalsByMeeting = new Map(totals.map((t) => [String(t._id), t]));
+
+  return meetings.map((meeting) => {
+    const totalsForMeeting = totalsByMeeting.get(String(meeting._id));
+    return {
+      ...meeting.toObject(),
+      bookingCount: totalsForMeeting?.bookingCount || 0,
+      subtotal: totalsForMeeting?.subtotal || 0,
+    };
+  });
+};
+
+/**
+ * Upcoming meetings (soonest first) with live booking counts/subtotals.
+ * Past meetings live in the Meeting History view instead.
  * GET /api/meetings/admin/all
  */
 const listMeetingsAdmin = async (req, res) => {
   try {
-    const meetings = await Meeting.find({ isActive: true }).sort({ meetingDateTime: -1 });
-
-    const totals = await MeetingBooking.aggregate([
-      { $match: { status: "paid" } },
-      {
-        $group: {
-          _id: "$meetingId",
-          bookingCount: { $sum: 1 },
-          subtotal: { $sum: "$meetingFee" },
-        },
-      },
-    ]);
-    const totalsByMeeting = new Map(totals.map((t) => [String(t._id), t]));
-
-    const data = meetings.map((meeting) => {
-      const totalsForMeeting = totalsByMeeting.get(String(meeting._id));
-      return {
-        ...meeting.toObject(),
-        bookingCount: totalsForMeeting?.bookingCount || 0,
-        subtotal: totalsForMeeting?.subtotal || 0,
-      };
-    });
-
+    const data = await withBookingTotals(
+      { meetingDateTime: { $gt: new Date() } },
+      { meetingDateTime: 1 }
+    );
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message || "Unable to fetch meetings",
+    });
+  }
+};
+
+/**
+ * Past meetings (most recent first) for the admin Meeting History view.
+ * GET /api/meetings/admin/history
+ */
+const listMeetingHistoryAdmin = async (req, res) => {
+  try {
+    const data = await withBookingTotals(
+      { meetingDateTime: { $lte: new Date() } },
+      { meetingDateTime: -1 }
+    );
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Unable to fetch meeting history",
     });
   }
 };
@@ -201,14 +230,17 @@ const annotateMeeting = (meeting, bookedMeetingIds, seenMeetingIds) => {
 };
 
 /**
- * All meetings across every chapter — members may book any chapter's meeting.
+ * Upcoming meetings across every chapter — members may book any chapter's
+ * meeting. Past meetings (and their flyers) are hidden from members; admins
+ * see them under Meeting History.
  * GET /api/meetings
  */
 const listMeetingsForMember = async (req, res) => {
   try {
-    const meetings = await Meeting.find({ isActive: true }).sort({
-      meetingDateTime: -1,
-    });
+    const meetings = await Meeting.find({
+      isActive: true,
+      meetingDateTime: { $gt: new Date() },
+    }).sort({ meetingDateTime: 1 });
 
     const bookedRows = await MeetingBooking.find({ userId: req.userId, status: "paid" }).select("meetingId");
     const bookedMeetingIds = new Set(bookedRows.map((b) => String(b.meetingId)));
@@ -435,6 +467,7 @@ const verifyBookingPayment = async (req, res) => {
 module.exports = {
   createMeeting,
   listMeetingsAdmin,
+  listMeetingHistoryAdmin,
   getMeetingBookings,
   listMeetingsForMember,
   listUnseenMeetings,

@@ -10,6 +10,7 @@ const router = express.Router();
 const {
   createMeeting,
   listMeetingsAdmin,
+  listMeetingHistoryAdmin,
   getMeetingBookings,
   listMeetingsForMember,
   listUnseenMeetings,
@@ -45,11 +46,18 @@ router.post(
 );
 
 /**
- * List all meetings with live booking counts/subtotals.
+ * List upcoming meetings with live booking counts/subtotals.
  * GET /api/meetings/admin/all
  * Headers: Authorization: Bearer {accessToken}
  */
 router.get("/admin/all", authMiddleware, adminMiddleware, listMeetingsAdmin);
+
+/**
+ * List past meetings (Meeting History) with booking counts/subtotals.
+ * GET /api/meetings/admin/history
+ * Headers: Authorization: Bearer {accessToken}
+ */
+router.get("/admin/history", authMiddleware, adminMiddleware, listMeetingHistoryAdmin);
 
 /**
  * Booked-seats detail for a single meeting (for the admin modal).
@@ -65,7 +73,7 @@ router.get("/:id/bookings", authMiddleware, adminMiddleware, getMeetingBookings)
  */
 
 /**
- * Meetings from every chapter (cross-chapter booking allowed).
+ * Upcoming meetings from every chapter (cross-chapter booking allowed).
  * GET /api/meetings
  * Headers: Authorization: Bearer {accessToken}
  */
